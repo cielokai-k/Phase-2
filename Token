@@ -1,0 +1,6 @@
+public class Token(TokenType type, String lexeme, int line, int column) {
+    //Output builder
+    public String toString() {
+        return String.format("Token(type=%s, lexeme='%s', line=%d, column=%d)", type, lexeme, line, column);
+    }
+}
