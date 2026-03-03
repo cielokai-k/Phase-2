@@ -24,7 +24,7 @@ public class SymTable {
     }
 }
 
-// IdDetails as compisition
+// IdDetails as composition
 class IdDetails {
     public String lexeme;
     public TokenType type;

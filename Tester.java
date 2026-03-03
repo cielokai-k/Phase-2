@@ -23,6 +23,7 @@ public class Tester {
             token = scanner.getNextToken();
             if (token.type != TokenType.EOF) {
                 
+                // Error already includes the line number and reason - not included how to fix the error
                 if (token.type == TokenType.ILLEGAL) {
                     System.out.println("[LEXICAL ERROR: Line " + token.line + " | Reason: " + token.lexeme + "]");
                     lastPrintedLine = token.line;
