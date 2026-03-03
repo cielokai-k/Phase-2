@@ -1,0 +1,394 @@
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+
+public class Scanner {
+    public File sourceFile;
+    public SymTable symTable;
+    public Map<String, TokenType> keywords;
+    public int currentPos;
+    public int line;
+    private TokenType lastTokenType = null;
+
+    private String sourceCode; 
+
+    public Scanner(File sourceFile, SymTable symTable) {
+        this.sourceFile = sourceFile;
+        this.symTable = symTable;
+        this.currentPos = 0;
+        this.line = 1;
+        this.keywords = new HashMap<>();
+        
+        try {
+            this.sourceCode = new String(Files.readAllBytes(sourceFile.toPath()));
+        } catch (IOException e) {
+            this.sourceCode = "";
+            System.err.println("Error reading source file");
+        }
+
+        // Initialize keywords to the Symbol Table
+        keywords.put("thought", TokenType.THOUGHT);
+        keywords.put("neuron", TokenType.NEURON);
+        keywords.put("synapse", TokenType.SYNAPSE);
+        keywords.put("pulse", TokenType.PULSE);
+        keywords.put("spark", TokenType.SPARK);
+        keywords.put("stream", TokenType.STREAM);
+        keywords.put("cluster", TokenType.CLUSTER);
+        keywords.put("void", TokenType.VOID);
+        keywords.put("instinct", TokenType.INSTINCT);
+        keywords.put("stimulate", TokenType.STIMULATE);
+        keywords.put("inhibit", TokenType.INHIBIT);
+        keywords.put("evaluate", TokenType.EVALUATE);
+        keywords.put("path", TokenType.PATH);
+        keywords.put("base", TokenType.BASE);
+        keywords.put("cycle", TokenType.CYCLE);
+        keywords.put("react", TokenType.REACT);
+        keywords.put("echo", TokenType.ECHO);
+        keywords.put("dormant", TokenType.DORMANT);
+        keywords.put("flow", TokenType.FLOW);
+        keywords.put("recall", TokenType.RECALL);
+        keywords.put("activate", TokenType.ACTIVATE);
+        keywords.put("action", TokenType.ACTION);
+        keywords.put("sense", TokenType.SENSE);
+        keywords.put("express", TokenType.EXPRESS);
+        keywords.put("transcribe", TokenType.TRANSCRIBE);
+        keywords.put("length", TokenType.LENGTH);
+        
+        // Boolean literals - considered as keywords
+        keywords.put("true", TokenType.TRUE);
+        keywords.put("false", TokenType.FALSE);
+    }
+
+    public Token getNextToken() {
+        skipWhitespace();
+        if (isAtEnd()) return new Token(TokenType.EOF, "", line);
+
+        int startPos = currentPos;
+        char ch = readNextChar();
+        Token result = null; // We use this variable to avoid 'unreachable' errors
+
+        switch (ch) {
+            case '(': result = new Token(TokenType.L_PAREN, "(", line); break;
+            case ')': result = new Token(TokenType.R_PAREN, ")", line); break;
+            case '{': result = new Token(TokenType.L_BRACE, "{", line); break;
+            case '}': result = new Token(TokenType.R_BRACE, "}", line); break;
+            case '[': result = new Token(TokenType.L_BRACKET, "[", line); break;
+            case ']': result = new Token(TokenType.R_BRACKET, "]", line); break;
+            case ',': result = new Token(TokenType.COMMA, ",", line); break;
+            case ';': result = new Token(TokenType.SEMICOLON, ";", line); break;
+            case ':': result = new Token(TokenType.COLON, ":", line); break;
+
+            case '+':
+                if (isMatch('+')) result = new Token(TokenType.UNARY_OP, "++", line);
+                else if (isMatch('=')) result = new Token(TokenType.ASSIGN_OP, "+=", line);
+                else {
+                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN_OP || 
+                        lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.RECALL) {
+                        result = new Token(TokenType.UNARY_OP, "+", line);
+                    } else {
+                        result = new Token(TokenType.ADD_OP, "+", line);
+                    }
+                }
+                break;
+            case '-':
+               if (isMatch('-')) result = new Token(TokenType.UNARY_OP, "--", line);
+                else if (isMatch('=')) result = new Token(TokenType.ASSIGN_OP, "-=", line);
+                else {
+                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN_OP || 
+                        lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.COMMA ||
+                        lastTokenType == TokenType.RECALL) {
+                        result = new Token(TokenType.UNARY_OP, "-", line);
+                    } else {
+                        result = new Token(TokenType.ADD_OP, "-", line);
+                    }
+                }
+                break;
+            case '*':
+                if (isMatch('*')) result = new Token(TokenType.EXP_OP, "**", line);
+                else if (isMatch('=')) result = new Token(TokenType.ASSIGN_OP, "*=", line);
+                else result = new Token(TokenType.MUL_OP, "*", line);
+                break;
+            case '/':
+                if (isMatch('=')) result = new Token(TokenType.ASSIGN_OP, "/=", line);
+                else result = new Token(TokenType.MUL_OP, "/", line);
+                break;
+            case '%':
+                if (isMatch('=')) result = new Token(TokenType.ASSIGN_OP, "%=", line);
+                else result = new Token(TokenType.MUL_OP, "%", line);
+                break;
+            case '=':
+                if (isMatch('=')) result = new Token(TokenType.EQUALITY_OP, "==", line);
+                else result = new Token(TokenType.ASSIGN_OP, "=", line);
+                break;
+            case '!':
+                if (isMatch('=')) result = new Token(TokenType.EQUALITY_OP, "!=", line);
+                else result = new Token(TokenType.UNARY_OP, "!", line);
+                break;
+            case '>':
+                if (isMatch('=')) result = new Token(TokenType.REL_OP, ">=", line);
+                else result = new Token(TokenType.REL_OP, ">", line);
+                break;
+            case '<':
+                if (isMatch('=')) result = new Token(TokenType.REL_OP, "<=", line);
+                else result = new Token(TokenType.REL_OP, "<", line);
+                break;
+            case '&':
+                if (isMatch('&')) result = new Token(TokenType.AND_OP, "&&", line);
+                else result = new Token(TokenType.ILLEGAL, "Invalid Character '&'", line);
+                break;
+            case '|':
+                if (isMatch('|')) result = new Token(TokenType.OR_OP, "||", line);
+                else result = new Token(TokenType.ILLEGAL, "Invalid Character '|'", line);
+                break;
+            case '^': result = new Token(TokenType.XOR_OP, "^", line); break;
+
+            case '"': result = scanThought(startPos); break;
+            case '\'': result = scanNeuron(startPos); break;            
+
+            default:
+                pushbackChar(); 
+                if (isDigit(ch)) result = scanPulseOrSparkOrStream(startPos);
+                else if (isAlpha(ch)) result = scanId(startPos);
+                else {
+                    while (!isAtEnd() && !isWhitespace(lookahead()) && !isAlphaNumeric(lookahead())) {
+                        readNextChar();
+                    }
+                    String illegalStr = sourceCode.substring(startPos, currentPos);            
+                    result = new Token(TokenType.ILLEGAL, "Invalid Character '" + illegalStr + "'", line);
+                }
+                break;
+        }
+
+        if (result != null) {
+            lastTokenType = result.type;
+            return result;
+        }
+        
+        return new Token(TokenType.ILLEGAL, "Unknown Error", line);
+    }
+
+    public void skipWhitespace() {
+        while (!isAtEnd()) {
+            char ch = lookahead();
+            if (isWhitespace(ch)) {
+                if (ch == '\n') line++;
+                readNextChar();
+            } else if (ch == 'd') {
+                // Potential comment starting with "dream"
+                int commentStart = currentPos;
+                if (checkIfComment()) {
+                    // Comment was consumed, continue skipping whitespace
+                    continue;
+                } else {
+                    return;
+                }
+            } else {
+                // Reached a real token
+                break;
+            }
+        }
+    }
+
+    // Process comment
+    private boolean checkIfComment() {
+        String dreamKeyword = "dream";
+        for (int i = 0; i < dreamKeyword.length(); i++) {
+            if (isAtEnd() || readNextChar() != dreamKeyword.charAt(i)) {
+                unreadSeq(currentPos - (currentPos - i - 1)); 
+                return false;
+            }
+        }
+
+        skipSpacesOnly();
+        char next = lookahead();
+
+        if (next == ':') {
+            // Single-line comment
+            readNextChar();
+            while (!isAtEnd() && lookahead() != '\n') {
+                readNextChar();
+            }
+            return true;
+        } else if (next == '{') {
+            // Multi-line comment
+            readNextChar();
+            while (!isAtEnd()) {
+                if (lookahead() == '\n') line++;
+                if (readNextChar() == '}') break;
+            }
+            return true;
+        }
+        unreadSeq(5); 
+        return false;
+    }
+    
+    private void skipSpacesOnly() {
+        while (!isAtEnd() && (lookahead() == ' ' || lookahead() == '\t')) {
+            readNextChar();
+        }
+    }
+
+    public Token scanId(int startPos) {
+        while (isAlphaNumeric(lookahead())) {
+            readNextChar();
+        }
+        
+        String text = sourceCode.substring(startPos, currentPos);
+        TokenType type = keywords.getOrDefault(text, TokenType.IDENTIFIER);
+        
+        if (type == TokenType.IDENTIFIER) {
+            symTable.addLexeme(text);
+        } else if (type == TokenType.TRUE || type == TokenType.FALSE) {
+            // Boolean literals
+            return new Literal(type, text, Boolean.parseBoolean(text), line);
+        }
+        
+        return new Token(type, text, line);
+    }
+
+    // Combines logic for scanPulse, scanSpark, and scanStream - refer to DFA
+    public Token scanPulseOrSparkOrStream(int startPos) {
+        while (isDigit(lookahead())) {
+            readNextChar();
+        }
+
+        // Invalid Identifier Start
+        if (isAlpha(lookahead()) && lookahead() != 'f' && lookahead() != 'F') {
+            while (isAlphaNumeric(lookahead())) {
+                readNextChar();
+            }
+            String badText = sourceCode.substring(startPos, currentPos);
+            return new Token(TokenType.ILLEGAL, "Invalid Identifier Start '" + badText + "'", line);
+        }
+
+        // Invalid Float Literals
+        if (lookahead() == '.') {
+             // Consume first '.'
+            readNextChar();
+            
+            boolean hasMultipleDots = false;
+            boolean hasInvalidLetters = false;
+
+            while (isAlphaNumeric(lookahead()) || lookahead() == '.') {
+                char next = lookahead();
+                if (next == '.') hasMultipleDots = true;
+                else if (isAlpha(next) && next != 'f' && next != 'F') hasInvalidLetters = true;
+                
+                // If there's a letter AFTER the 'f' or 'F'
+                if ((next == 'f' || next == 'F') && isAlphaNumeric(peekNext())) hasInvalidLetters = true;
+
+                readNextChar();
+            }
+
+            if (hasMultipleDots || hasInvalidLetters) {
+                String badText = sourceCode.substring(startPos, currentPos);
+                return new Token(TokenType.ILLEGAL, "Malformed Float Literal '" + badText + "'", line);
+            }
+
+            // Normal Float Processing - refer to DFA
+            String text = sourceCode.substring(startPos, currentPos);
+            if (text.endsWith("f") || text.endsWith("F")) {
+                return new Literal(TokenType.SPARK_LIT, text, text, line);
+            } else {
+                return new Literal(TokenType.STREAM_LIT, text, Double.parseDouble(text), line);
+            }
+        }
+
+        // Normal Pulse Processing - refer to DFA
+        String text = sourceCode.substring(startPos, currentPos);
+        return new Literal(TokenType.PULSE_LIT, text, Integer.parseInt(text), line);
+    }
+
+    public Token scanThought(int startPos) {
+        int startLine = line;
+        while (!isAtEnd() && lookahead() != '"') {
+            if (lookahead() == '\n') line++;
+            
+            // Handle escape sequences
+            if (lookahead() == '\\' && peekNext() == '"') {
+                readNextChar(); 
+            }
+            readNextChar();
+        }
+
+        if (isAtEnd()) {
+            String val = sourceCode.substring(startPos + 1, currentPos);
+            System.err.println("Line " + startLine + ": Unterminated thought (string) literal.");
+            return new Literal(TokenType.THOUGHT_LIT, val, val, startLine);
+        }
+
+        readNextChar(); // Consume closing "
+        String val = sourceCode.substring(startPos + 1, currentPos - 1);
+        return new Literal(TokenType.THOUGHT_LIT, val, val, startLine);
+    }
+    
+    public Token scanNeuron(int startPos) {
+        if (lookahead() == '\\') {
+            readNextChar(); // Consume escape char
+            readNextChar(); // Consume escaped character
+        } else {
+            readNextChar(); // Consume char
+        }
+        
+        if (lookahead() == '\'') {
+            readNextChar(); // Consume closing '
+        } else {
+            System.err.println("Line " + line + ": Malformed neuron (character) literal.");
+        }
+        
+        String val = sourceCode.substring(startPos + 1, currentPos - 1);
+        return new Literal(TokenType.NEURON_LIT, val, val, line);
+    }
+    
+    public boolean isAtEnd() { return currentPos >= sourceCode.length(); }
+    
+    public char readNextChar() { 
+        if (isAtEnd()) return '\0';
+        return sourceCode.charAt(currentPos++); 
+    }
+    
+    public void pushbackChar() { 
+        if (currentPos > 0) currentPos--; 
+    }
+    
+    public void unreadSeq(int length) { 
+        currentPos -= length;
+        if (currentPos < 0) currentPos = 0;
+    }
+    
+    public int getCurrentPos() { return currentPos; }
+    
+    public char lookahead() { 
+        if (isAtEnd()) return '\0';
+        return sourceCode.charAt(currentPos);
+    }
+    
+    private char peekNext() {
+        if (currentPos + 1 >= sourceCode.length()) return '\0';
+        return sourceCode.charAt(currentPos + 1);
+    }
+    
+    public boolean isMatch(char expected) { 
+        if (isAtEnd() || sourceCode.charAt(currentPos) != expected) return false;
+        currentPos++;
+        return true;
+    }
+    
+    public boolean isAlpha(char ch) { 
+        return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_'; 
+    }
+    
+    public boolean isDigit(char ch) { 
+        return ch >= '0' && ch <= '9'; 
+    }
+    
+    public boolean isAlphaNumeric(char ch) { 
+        return isAlpha(ch) || isDigit(ch); 
+    }
+    
+    private boolean isWhitespace(char ch) {
+        return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+    }
+}

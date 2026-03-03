@@ -1,0 +1,27 @@
+activate {
+    dream: Scanning Error Demonstration
+
+    pulse validNumber = 10;
+    
+    dream {
+        ERROR 1: Invalid Character
+        The '$' symbol is not allowed in identifiers or operators (unless inside a string).
+    }
+
+    pulse money$ = 500; 
+
+    dream {
+        ERROR 2: Malformed Float Literal
+        Floats (spark) must be suffixed with 'f' or 'F'. 
+        Additionally, multiple decimal points are not recognized as a valid numeric token.
+    }
+
+    spark invalidFloat = 12.34.56f;
+
+    dream {
+        ERROR 3: Invalid Identifier Start
+        Identifiers must start with a letter. Starting with a digit is a lexical error.
+    }
+
+    thought 2ndThought = "Invalid";
+}

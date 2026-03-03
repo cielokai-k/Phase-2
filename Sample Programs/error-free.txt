@@ -1,0 +1,93 @@
+dream {
+    CEREBRA FEATURES DEMONSTRATION
+    This program calculates a value, checks conditions, 
+    and uses arrays to demonstrate core language features.
+}
+
+dream {
+    Function definition (action) with a return value (recall).
+    It takes an integer (pulse) and returns its square.
+}
+
+action pulse calculateSquare(pulse num) {
+    recall num * num;
+}
+
+activate {
+
+    dream {
+        Variable Declarations using specific data types.
+        'thought' is used for string literals.
+    }
+
+    thought greeting = "Initiating Program...";
+    express(greeting);
+
+    dream {
+        Input using 'sense'.
+        We initialize a variable first, then capture user input into it.
+    }
+
+    express("Enter a pulse (integer) value: ");
+    pulse userValue = 0;
+    sense pulse userValue;
+
+    dream {
+        Conditional Logic using 'stimulate' (if) and 'inhibit' (else).
+        Checks if the input is negative.
+    }
+
+    stimulate (userValue < 0) {
+        express("Warning: Negative energy detected.");
+    } inhibit {
+        express("Positive energy detected.");
+        
+        dream: Function Call to calculate the square
+        pulse squared = calculateSquare(userValue);
+        
+        dream {
+            Explicit conversion needed for concatenation.
+            We use 'transcribe' to convert the integer result to a string.
+        }
+
+        express("Squared value: " + transcribe(squared));
+
+        dream {
+            Switch Statement using 'evaluate'.
+            'path' acts as case, 'dormant' as break, and 'base' as default.
+        }
+
+        evaluate (squared) {
+            path 0:
+                express("Result is zero.");
+                dormant;
+            path 100:
+                express("Result is exactly 100.");
+                dormant;
+            base:
+                express("Result is a standard variant.");
+        }
+    }
+
+    dream: Array (Cluster) Declaration with 3 integers
+    pulse cluster dataPoints[3] = {1, 2, 3};
+    express("First data point: " + transcribe(dataPoints[0]));
+
+    dream: Looping Construct (echo - for loop)
+    echo (pulse i = 0; i < 3; i++) {
+        express("Iteration sequence: " + transcribe(i));
+    }
+    
+    dream: Looping Construct (cycle - while loop)
+    pulse countdown = 3;
+    cycle (countdown > 0) {
+        express("T-minus " + transcribe(countdown));
+        countdown--;
+    }
+
+    dream: Initialize a negative number (Unary minus)
+    pulse x = -5;
+
+    dream: Initialize a positive number (Unary plus)
+    pulse x = +6;
+}
