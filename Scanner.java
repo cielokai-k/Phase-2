@@ -176,8 +176,6 @@ public class Scanner {
                 if (ch == '\n') line++;
                 readNextChar();
             } else if (ch == 'd') {
-                // Potential comment starting with "dream"
-                int commentStart = currentPos;
                 if (checkIfComment()) {
                     // Comment was consumed, continue skipping whitespace
                     continue;
