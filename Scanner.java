@@ -336,47 +336,6 @@ public class Scanner {
         }
     }
 
-    // Process comment
-    private boolean checkIfComment() {
-        String dreamKeyword = "dream";
-        for (int i = 0; i < dreamKeyword.length(); i++) {
-            if (isAtEnd() || readNextChar() != dreamKeyword.charAt(i)) {
-                unreadSeq(currentPos - (currentPos - i - 1));
-                return false;
-            }
-        }
-
-        skipSpacesOnly();
-        char next = lookahead();
-
-        if (next == ':') {
-            // Single-line comment
-            readNextChar();
-            while (!isAtEnd() && lookahead() != '\n') {
-                readNextChar();
-            }
-            return true;
-        } else if (next == '{') {
-            // Multi-line comment
-            readNextChar();
-            while (!isAtEnd()) {
-                if (lookahead() == '\n')
-                    line++;
-                if (readNextChar() == '}')
-                    break;
-            }
-            return true;
-        }
-        unreadSeq(5);
-        return false;
-    }
-
-    private void skipSpacesOnly() {
-        while (!isAtEnd() && (lookahead() == ' ' || lookahead() == '\t')) {
-            readNextChar();
-        }
-    }
-
     public Token scanId(int startPos) {
         while (isAlphaNumeric(lookahead())) {
             readNextChar();
