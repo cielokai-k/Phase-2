@@ -3,7 +3,7 @@ import java.io.File;
 public class Tester {
     public static void main(String[] args) {
         // Put the file name here
-        String filePath = "Sample Programs/error-free.txt";
+        String filePath = "Sample Programs/test-numeric-literals.txt";
 
         // Initialiaze a Symbol Table
         SymTable symTable = new SymTable();
@@ -25,7 +25,7 @@ public class Tester {
                 
                 // Error already includes the line number and reason - not included how to fix the error
                 if (token.type == TokenType.ILLEGAL) {
-                    System.out.println("[LEXICAL ERROR: Line " + token.line + " | Reason: " + token.lexeme + "]");
+                    System.err.print("[ERROR: Line " + token.line + " | Reason: " + token.lexeme + "] ");
                     lastPrintedLine = token.line;
                     continue; 
                 }

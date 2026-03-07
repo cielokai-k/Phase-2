@@ -150,11 +150,16 @@ public class Scanner {
             default:
                 pushbackChar(); 
                 if (isDigit(ch)) result = scanPulseOrSparkOrStream(startPos);
-                else if (isAlpha(ch)) result = scanId(startPos);
+                else if (isLetter(ch)) result = scanId(startPos);
                 else {
+                    // Force the scanner to consume the bad character
+                    readNextChar(); 
+                    
+                    // Loop to group any consecutive bad characters together
                     while (!isAtEnd() && !isWhitespace(lookahead()) && !isAlphaNumeric(lookahead())) {
                         readNextChar();
                     }
+                    
                     String illegalStr = sourceCode.substring(startPos, currentPos);            
                     result = new Token(TokenType.ILLEGAL, "Invalid Character '" + illegalStr + "'", line);
                 }
@@ -234,6 +239,12 @@ public class Scanner {
         }
         
         String text = sourceCode.substring(startPos, currentPos);
+        
+        // Lexical Error for exceeding maximum length (256 char)
+        if (text.length() > 256) {
+            return new Token(TokenType.ILLEGAL, "Identifier exceeds maximum length of 256 characters", line);
+        }
+        
         TokenType type = keywords.getOrDefault(text, TokenType.IDENTIFIER);
         
         if (type == TokenType.IDENTIFIER) {
@@ -248,53 +259,65 @@ public class Scanner {
 
     // Combines logic for scanPulse, scanSpark, and scanStream - refer to DFA
     public Token scanPulseOrSparkOrStream(int startPos) {
+        // q0 to q1 - consume initial digits
         while (isDigit(lookahead())) {
             readNextChar();
         }
 
-        // Invalid Identifier Start
-        if (isAlpha(lookahead()) && lookahead() != 'f' && lookahead() != 'F') {
-            while (isAlphaNumeric(lookahead())) {
-                readNextChar();
-            }
-            String badText = sourceCode.substring(startPos, currentPos);
-            return new Token(TokenType.ILLEGAL, "Invalid Identifier Start '" + badText + "'", line);
-        }
-
-        // Invalid Float Literals
+        // In q1 - check if stream/spark if it has "." or pulse
         if (lookahead() == '.') {
-             // Consume first '.'
-            readNextChar();
-            
-            boolean hasMultipleDots = false;
-            boolean hasInvalidLetters = false;
+            readNextChar();     // q1 to q3 - "." is seen by the lookahead
 
-            while (isAlphaNumeric(lookahead()) || lookahead() == '.') {
-                char next = lookahead();
-                if (next == '.') hasMultipleDots = true;
-                else if (isAlpha(next) && next != 'f' && next != 'F') hasInvalidLetters = true;
-                
-                // If there's a letter AFTER the 'f' or 'F'
-                if ((next == 'f' || next == 'F') && isAlphaNumeric(peekNext())) hasInvalidLetters = true;
+            // In q3 - need to have at least 1 digit after "." to transition to q4
+            if (!isDigit(lookahead())) {
+                // Throw error if no digit after decimal
+                String badText = sourceCode.substring(startPos, currentPos);
+                return new Token(TokenType.ILLEGAL, "Invalid Float Literal (missing trailing digits) '" + badText + "'", line);
+            }
 
+            // q3 to q4 - consume decimal digits
+            while (isDigit(lookahead())) {
                 readNextChar();
             }
 
-            if (hasMultipleDots || hasInvalidLetters) {
+            // Catch multiple decimals (multiple "." are present)
+            if (lookahead() == '.') {
+                // Consume the rest of the broken number
+                while (isDigit(lookahead()) || lookahead() == '.') {
+                    readNextChar();
+                }
                 String badText = sourceCode.substring(startPos, currentPos);
-                return new Token(TokenType.ILLEGAL, "Malformed Float Literal '" + badText + "'", line);
+                return new Token(TokenType.ILLEGAL, "Invalid character '.', multiple '.' present in '" + badText + "'", line);
             }
 
-            // Normal Float Processing - refer to DFA
-            String text = sourceCode.substring(startPos, currentPos);
-            if (text.endsWith("f") || text.endsWith("F")) {
+            // In q4 - check if spark (if it has "f" or "F") or scanning stops and return as stream
+            if (lookahead() == 'f' || lookahead() == 'F') {
+                readNextChar(); // Transition q4 -> q6 (Consume 'f'/'F')
+                
+                // Catch invalid literals like "123.4f_bad" or "123.4fX"
+                if (isLetter(lookahead()) || lookahead() == '_') {
+                    return consumeAndReturnInvalidNumeric(startPos);
+                }
+
+                // q6 to q7 - return SPARK_LIT
+                String text = sourceCode.substring(startPos, currentPos);
                 return new Literal(TokenType.SPARK_LIT, text, text, line);
-            } else {
-                return new Literal(TokenType.STREAM_LIT, text, Double.parseDouble(text), line);
             }
+
+            if (isLetter(lookahead()) || lookahead() == '_') {
+                return consumeAndReturnInvalidNumeric(startPos);
+            }
+
+            // q4 to q5 - no "f" or "F" then pushback other character and STREAM_LIT is read
+            String text = sourceCode.substring(startPos, currentPos);
+            return new Literal(TokenType.STREAM_LIT, text, Double.parseDouble(text), line);
+        }
+        
+            if (isLetter(lookahead()) || lookahead() == '_') {
+            return consumeAndReturnInvalidNumeric(startPos);
         }
 
-        // Normal Pulse Processing - refer to DFA
+        // q1 to q2 - no "." then pushback other character and PULSE_LIT is read
         String text = sourceCode.substring(startPos, currentPos);
         return new Literal(TokenType.PULSE_LIT, text, Integer.parseInt(text), line);
     }
@@ -333,13 +356,23 @@ public class Scanner {
         if (lookahead() == '\'') {
             readNextChar(); // Consume closing '
         } else {
-            System.err.println("Line " + line + ": Malformed neuron (character) literal.");
+            System.err.println("Line " + line + ": Invalid neuron (character) literal.");
         }
         
         String val = sourceCode.substring(startPos + 1, currentPos - 1);
         return new Literal(TokenType.NEURON_LIT, val, val, line);
     }
     
+    // Helper methods
+    private Token consumeAndReturnInvalidNumeric(int startPos) {
+        // Consume the rest of the attached letters/underscores
+        while (isAlphaNumeric(lookahead()) || lookahead() == '_') {
+            readNextChar();
+        }
+        String badText = sourceCode.substring(startPos, currentPos);
+        return new Token(TokenType.ILLEGAL, "Invalid value as numerical '" + badText + "'", line);
+    }
+
     public boolean isAtEnd() { return currentPos >= sourceCode.length(); }
     
     public char readNextChar() { 
@@ -372,6 +405,10 @@ public class Scanner {
         if (isAtEnd() || sourceCode.charAt(currentPos) != expected) return false;
         currentPos++;
         return true;
+    }
+
+    public boolean isLetter(char ch) {
+        return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
     }
     
     public boolean isAlpha(char ch) { 
