@@ -1,0 +1,31 @@
+activate {
+    pulse x = 10; dream: This is a single-line comment at the end of a line
+    pulse y = 20;
+    
+    x = x + dream { This is a multi-line 
+                    comment inside 
+                    an expression } y;
+    pulse b = 10 + dream { This is a 
+                        multi-line comment 
+                        spanning several lines 
+                        to test the scanner } 20;
+
+    dream: Testing the "Backtracking" logic (The "dream" variable)
+    pulse dream = 100;
+    pulse dreamValue = 200;
+    
+    dream{A comment with no spaces after dream}
+    x = dream + 5;
+    
+    dream { 
+        Inside this multi-line comment, 
+        symbols like pulse, =, and ; 
+        should be completely ignored.
+        even another dream: should be ignored.
+    }
+
+    pulse final = x + y;
+
+    dream {
+        This comment starts but never ends.
+        The scanner should reach the end of the file.
