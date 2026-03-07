@@ -3,7 +3,7 @@ import java.io.File;
 public class Tester {
     public static void main(String[] args) {
         // Put the file name here
-        String filePath = "Sample Programs/test_operators.txt";
+        String filePath = "Sample Programs/test_whitespace.txt";
 
         // Initialiaze a Symbol Table
         SymTable symTable = new SymTable();

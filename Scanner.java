@@ -71,7 +71,7 @@ public class Scanner {
         Token result = null; // We use this variable to avoid 'unreachable' errors
 
         switch (ch) {
-            // --- BRACKETS, BRACES, PARENS & PUNCTUATION ---
+            // Brackets, Braces, Parens and Punctuations
             case '(':
                 result = new Token(TokenType.L_PAREN, "(", line);
                 break;
@@ -100,7 +100,7 @@ public class Scanner {
                 result = new Token(TokenType.COLON, ":", line);
                 break;
 
-            // --- ARITHMETIC OPERATORS (From Image 2) ---
+            // Arithmetic Operators
             case '+':
                 if (isMatch('+'))
                     result = new Token(TokenType.INCREMENT, "++", line);
@@ -157,7 +157,7 @@ public class Scanner {
                     result = new Token(TokenType.MOD, "%", line); // Fixed from ASSIGN in the diagram typo
                 break;
 
-            // --- RELATIONAL & LOGICAL OPERATORS (From Image 1) ---
+            // Relational and Logical Operators
             case '=':
                 if (isMatch('='))
                     result = new Token(TokenType.EQUAL_TO, "==", line);
@@ -204,7 +204,7 @@ public class Scanner {
                 result = new Token(TokenType.XOR, "^", line);
                 break;
 
-            // --- LITERALS AND IDENTIFIERS ---
+            // Literals and Identifiers
             case '"':
                 result = scanThought(startPos);
                 break;
@@ -235,7 +235,7 @@ public class Scanner {
                 break;
         }
 
-        // --- CRITICAL UNARY/CONTEXT SAVING ---
+        // Unary
         if (result != null) {
             lastTokenType = result.getType(); 
             return result;
