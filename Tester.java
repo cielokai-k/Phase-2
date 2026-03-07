@@ -15,9 +15,6 @@ public class Tester {
         Scanner scanner = new Scanner(inputFile, symTable);
 
         Token token;
-
-        // Track the line of the last token read
-        int lastPrintedLine = -1;
         
        do {
             token = scanner.getNextToken();
@@ -26,16 +23,18 @@ public class Tester {
                 // Error already includes the line number and reason - not included how to fix the error
                 if (token.type == TokenType.ILLEGAL) {
                     System.err.print("[ERROR: Line " + token.line + " | Reason: " + token.lexeme + "] ");
-                    lastPrintedLine = token.line;
                     continue; 
                 }
                 
                 // Normal Same-Line Formatting
-                if (lastPrintedLine != -1 && token.line > lastPrintedLine) {
+                System.out.print(token.displayToken() + " ");
+                
+                // Format to create a new line if statement logicall ends
+                if (token.type == TokenType.SEMICOLON || 
+                    token.type == TokenType.L_BRACE || 
+                    token.type == TokenType.R_BRACE) {
                     System.out.println();
                 }
-                System.out.print(token.displayToken() + " ");
-                lastPrintedLine = token.line; 
             }
         } while (token.type != TokenType.EOF);
     }
