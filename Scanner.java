@@ -1,3 +1,4 @@
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -5,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Scanner {
+
     public File sourceFile;
     public SymTable symTable;
     public Map<String, TokenType> keywords;
@@ -63,8 +65,9 @@ public class Scanner {
 
     public Token getNextToken() {
         skipWhitespace();
-        if (isAtEnd())
+        if (isAtEnd()) {
             return new Token(TokenType.EOF, "", line);
+        }
 
         int startPos = currentPos;
         char ch = readNextChar();
@@ -102,104 +105,114 @@ public class Scanner {
 
             // Arithmetic Operators
             case '+':
-                if (isMatch('+'))
+                if (isMatch('+')) {
                     result = new Token(TokenType.INCREMENT, "++", line);
-                else if (isMatch('='))
+                } else if (isMatch('=')) {
                     result = new Token(TokenType.PLUS_ASSIGN, "+=", line);
-                else {
+                } else {
                     // Unary context logic
-                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN ||
-                            lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.RECALL) {
+                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN
+                            || lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.RECALL) {
                         result = new Token(TokenType.UNARY_OP, "+", line);
                     } else {
                         result = new Token(TokenType.PLUS, "+", line);
                     }
                 }
                 break;
-                
+
             case '-':
-                if (isMatch('-'))
+                if (isMatch('-')) {
                     result = new Token(TokenType.DECREMENT, "--", line);
-                else if (isMatch('='))
+                } else if (isMatch('=')) {
                     result = new Token(TokenType.MINUS_ASSIGN, "-=", line);
-                else {
+                } else {
                     // Unary context logic
-                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN ||
-                            lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.COMMA ||
-                            lastTokenType == TokenType.RECALL) {
+                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN
+                            || lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.COMMA
+                            || lastTokenType == TokenType.RECALL) {
                         result = new Token(TokenType.UNARY_OP, "-", line);
                     } else {
                         result = new Token(TokenType.MINUS, "-", line);
                     }
                 }
                 break;
-                
+
             case '*':
-                if (isMatch('*'))
+                if (isMatch('*')) {
                     result = new Token(TokenType.EXPONENT, "**", line);
-                else if (isMatch('='))
+                } else if (isMatch('=')) {
                     result = new Token(TokenType.MUL_ASSIGN, "*=", line);
-                else
+                } else {
                     result = new Token(TokenType.STAR, "*", line);
+                }
                 break;
-                
+
             case '/':
-                if (isMatch('='))
+                if (isMatch('=')) {
                     result = new Token(TokenType.DIV_ASSIGN, "/=", line);
-                else
+                } else {
                     result = new Token(TokenType.SLASH, "/", line);
+                }
                 break;
-                
+
             case '%':
-                if (isMatch('='))
+                if (isMatch('=')) {
                     result = new Token(TokenType.MOD_ASSIGN, "%=", line);
-                else
+                } else {
                     result = new Token(TokenType.MOD, "%", line); // Fixed from ASSIGN in the diagram typo
+
+                }
                 break;
 
             // Relational and Logical Operators
             case '=':
-                if (isMatch('='))
+                if (isMatch('=')) {
                     result = new Token(TokenType.EQUAL_TO, "==", line);
-                else
+                } else {
                     result = new Token(TokenType.ASSIGN, "=", line);
+                }
                 break;
-                
+
             case '!':
-                if (isMatch('='))
+                if (isMatch('=')) {
                     result = new Token(TokenType.NOT_EQUAL, "!=", line);
-                else
+                } else {
                     result = new Token(TokenType.NOT, "!", line);
+                }
                 break;
-                
+
             case '>':
-                if (isMatch('='))
+                if (isMatch('=')) {
                     result = new Token(TokenType.GREATER_EQ, ">=", line);
-                else
+                } else {
                     result = new Token(TokenType.GREATER, ">", line);
+                }
                 break;
-                
+
             case '<':
-                if (isMatch('='))
+                if (isMatch('=')) {
                     result = new Token(TokenType.LESS_EQ, "<=", line);
-                else
+                } else {
                     result = new Token(TokenType.LESS, "<", line);
+                }
                 break;
-                
+
             case '&':
-                if (isMatch('&'))
+                if (isMatch('&')) {
                     result = new Token(TokenType.AND, "&&", line);
-                else
+                } else {
                     result = new Token(TokenType.ILLEGAL, "Lexical Error: Expected '&&' but found '&'", line);
+                }
                 break;
-                
+
             case '|':
-                if (isMatch('|'))
+                if (isMatch('|')) {
                     result = new Token(TokenType.OR, "||", line);
-                else
+                } else {
                     result = new Token(TokenType.ILLEGAL, "Lexical Error: Expected '||' but found '|'", line);
+                }
                 break;
-                
+
             case '^':
                 result = new Token(TokenType.XOR, "^", line);
                 break;
@@ -208,19 +221,19 @@ public class Scanner {
             case '"':
                 result = scanThought(startPos);
                 break;
-                
+
             case '\'':
                 result = scanNeuron(startPos);
                 break;
 
             default:
                 pushbackChar(); // Push back the char so the specific scan methods can read it from the start
-                
-                if (isDigit(ch))
+
+                if (isDigit(ch)) {
                     result = scanPulseOrSparkOrStream(startPos);
-                else if (isLetter(ch))
+                } else if (isLetter(ch)) {
                     result = scanId(startPos);
-                else {
+                } else {
                     // Force the scanner to consume the bad character
                     readNextChar();
 
@@ -237,7 +250,7 @@ public class Scanner {
 
         // Unary
         if (result != null) {
-            lastTokenType = result.getType(); 
+            lastTokenType = result.getType();
             return result;
         }
 
@@ -262,15 +275,13 @@ public class Scanner {
                     readNextChar();
                 }
                 continue; // q9 - accept (loop to accept more if ever)
-            } 
-            else if (ch == '\t') {
+            } else if (ch == '\t') {
                 // q11 loop
                 while (!isAtEnd() && lookahead() == '\t') {
                     readNextChar();
                 }
                 continue; // q9 - accept
-            } 
-            else if (ch == '\n') {
+            } else if (ch == '\n') {
                 // q13 loop
                 line++;
                 while (!isAtEnd() && lookahead() == '\n') {
@@ -278,12 +289,11 @@ public class Scanner {
                     readNextChar();
                 }
                 continue; // q9 - accept state
-            } 
-            // "dream" comment branch
+            } // "dream" comment branch
             else if (ch == 'd') {
                 // q1 -> q2 -> q3 -> q4 -> q5
                 if (isMatch('r') && isMatch('e') && isMatch('a') && isMatch('m')) {
-                    
+
                     if (isAtEnd()) {
                         currentPos = startPos;
                         break;
@@ -302,16 +312,16 @@ public class Scanner {
                             readNextChar(); // Loop on q6 ~(\n)
                         }
                         continue; // Comment successfully consumed, loop again
-                    } 
-                    else if (next == ' ') {
+                    } else if (next == ' ') {
                         // Transition q5 -> space -> q7
                         if (isMatch('{')) {
                             // Transition q7 -> { -> q8
                             boolean closed = false;
                             while (!isAtEnd()) {
                                 char c = readNextChar();
-                                if (c == '\n') line++;
-                                else if (c == '}') {
+                                if (c == '\n') {
+                                    line++;
+                                } else if (c == '}') {
                                     closed = true;
                                     break; // q8 -> } -> q9 (Accept)
                                 }
@@ -322,13 +332,12 @@ public class Scanner {
                             continue; // Comment successfully consumed, loop again
                         }
                     }
-                } 
-                
+                }
+
                 currentPos = startPos;
                 line = startLine;
                 break;
-            } 
-            else {
+            } else {
                 // Reached a non-whitespace, non-comment character
                 currentPos = startPos; // Push back the character
                 break; // Exit the loop
@@ -452,11 +461,13 @@ public class Scanner {
                     readNextChar(); // Consume the escaped character
                 } else {
                     // Invalid escape sequence found
-                    while (!isAtEnd() && lookahead() != '"' && lookahead() != '\n'){
+                    while (!isAtEnd() && lookahead() != '"' && lookahead() != '\n') {
                         readNextChar();
                     }
-                    
-                    if (lookahead() == '"') readNextChar();
+
+                    if (lookahead() == '"') {
+                        readNextChar();
+                    }
 
                     String badText = sourceCode.substring(startPos, currentPos).replaceAll("[\\r\\n]", "");
                     return new Token(TokenType.ILLEGAL, "Invalid escape sequence in thought literal '" + badText + "'", startLine);
@@ -525,57 +536,72 @@ public class Scanner {
         while (!isAtEnd() && lookahead() != '\'' && lookahead() != '\n' && lookahead() != '\r') {
             readNextChar();
         }
-        if (lookahead() == '\'') readNextChar(); // Consume the closing quote if it exists
-
+        if (lookahead() == '\'') {
+            readNextChar(); // Consume the closing quote if it exists
+        }
         String badText = sourceCode.substring(startPos, currentPos).replaceAll("[\\r\\n]", "");
         return new Token(TokenType.ILLEGAL, "Invalid neuron (character) literal '" + badText + "'", line);
     }
 
     // Process the escape characters
     private String unescape(String text) {
-    StringBuilder sb = new StringBuilder();
-    
-    for (int i = 0; i < text.length(); i++) {
-        char c = text.charAt(i);
-        
-        // backslash is read - check next character
-        if (c == '\\' && i + 1 < text.length()) {
-            char next = text.charAt(i + 1);
-            switch (next) {
-                case 'n': sb.append('\n'); break;
-                case 't': sb.append('\t'); break;
-                case '\\': sb.append('\\'); break;
-                case '"': sb.append('"'); break;
-                case '\'': sb.append('\''); break;
-                default: sb.append(next); // Fallback (though our DFA prevents reaching this)
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+
+            // backslash is read - check next character
+            if (c == '\\' && i + 1 < text.length()) {
+                char next = text.charAt(i + 1);
+                switch (next) {
+                    case 'n':
+                        sb.append('\n');
+                        break;
+                    case 't':
+                        sb.append('\t');
+                        break;
+                    case '\\':
+                        sb.append('\\');
+                        break;
+                    case '"':
+                        sb.append('"');
+                        break;
+                    case '\'':
+                        sb.append('\'');
+                        break;
+                    default:
+                        sb.append(next); // Fallback (though our DFA prevents reaching this)
+                }
+                i++; // Skip the next character
+            } else {
+                sb.append(c); // Normal character
             }
-            i++; // Skip the next character
-        } else {
-            sb.append(c); // Normal character
         }
+        return sb.toString();
     }
-    return sb.toString();
-}
 
     public boolean isAtEnd() {
         return currentPos >= sourceCode.length();
     }
 
     public char readNextChar() {
-        if (isAtEnd())
+        if (isAtEnd()) {
             return '\0';
+        }
         return sourceCode.charAt(currentPos++);
     }
 
     public void pushbackChar() {
-        if (currentPos > 0)
+        if (currentPos > 0) {
             currentPos--;
+        }
     }
 
     public void unreadSeq(int length) {
         currentPos -= length;
-        if (currentPos < 0)
+        if (currentPos < 0) {
             currentPos = 0;
+        }
     }
 
     public int getCurrentPos() {
@@ -583,14 +609,16 @@ public class Scanner {
     }
 
     public char lookahead() {
-        if (isAtEnd())
+        if (isAtEnd()) {
             return '\0';
+        }
         return sourceCode.charAt(currentPos);
     }
 
     public boolean isMatch(char expected) {
-        if (isAtEnd() || sourceCode.charAt(currentPos) != expected)
+        if (isAtEnd() || sourceCode.charAt(currentPos) != expected) {
             return false;
+        }
         currentPos++;
         return true;
     }
