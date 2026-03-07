@@ -1,32 +1,45 @@
 public enum TokenType {
-    //Datatypes
+    // Datatypes
     THOUGHT, NEURON, SYNAPSE, PULSE, SPARK, STREAM, CLUSTER, VOID, INSTINCT,
 
-    //Control Flow
+    // Control Flow
     STIMULATE, INHIBIT, EVALUATE, PATH, BASE, CYCLE, REACT, ECHO, DORMANT, FLOW, RECALL,
 
-    //PROGRAM STRUCTURE
+    // Program Structure
     ACTIVATE, ACTION,
 
-    //INPUT&OUTPUT
+    // Input and Output
     SENSE, EXPRESS,
 
-    //STRING OPERATIONS
+    // String operations
     TRANSCRIBE, LENGTH,
 
-    //OPERATORS
-    UNARY_OP, EXP_OP, MUL_OP, ADD_OP, REL_OP, EQUALITY_OP, AND_OP, XOR_OP, OR_OP, ASSIGN_OP, //categorized based on precedence
+    // OPERATORS - following the DFA
+    // Arithmetic
+    PLUS, MINUS, STAR, SLASH, MOD, EXPONENT,
+    
+    // Unary & Increment/Decrement
+    UNARY_OP, INCREMENT, DECREMENT, NOT,
+    
+    // Assignment & Compound Assignment
+    ASSIGN, PLUS_ASSIGN, MINUS_ASSIGN, MUL_ASSIGN, DIV_ASSIGN, MOD_ASSIGN,
+    
+    // Relational
+    EQUAL_TO, NOT_EQUAL, GREATER, GREATER_EQ, LESS, LESS_EQ,
+    
+    // Logical / Bitwise
+    AND, OR, XOR,
 
-    //SEPERATOR & GROUPING SYMBOLS
+    // Delimiters
     L_PAREN, R_PAREN, L_BRACE, R_BRACE, L_BRACKET, R_BRACKET, COMMA, SEMICOLON, COLON,
 
-    //BOOLEANS
+    // BOOLEANS
     TRUE, FALSE,
 
-    //USER DEFINED TOKENS & LITERALS
+    // User-defined tokens and Literals
     IDENTIFIER, PULSE_LIT, SPARK_LIT, STREAM_LIT, NEURON_LIT, THOUGHT_LIT,
 
-    //SPECIAL TOKEN
+    // SPECIAL TOKENS
     EOF,
     ILLEGAL
 }

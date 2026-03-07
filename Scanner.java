@@ -71,6 +71,7 @@ public class Scanner {
         Token result = null; // We use this variable to avoid 'unreachable' errors
 
         switch (ch) {
+            // --- BRACKETS, BRACES, PARENS & PUNCTUATION ---
             case '(':
                 result = new Token(TokenType.L_PAREN, "(", line);
                 break;
@@ -99,104 +100,122 @@ public class Scanner {
                 result = new Token(TokenType.COLON, ":", line);
                 break;
 
+            // --- ARITHMETIC OPERATORS (From Image 2) ---
             case '+':
                 if (isMatch('+'))
-                    result = new Token(TokenType.UNARY_OP, "++", line);
+                    result = new Token(TokenType.INCREMENT, "++", line);
                 else if (isMatch('='))
-                    result = new Token(TokenType.ASSIGN_OP, "+=", line);
+                    result = new Token(TokenType.PLUS_ASSIGN, "+=", line);
                 else {
-                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN_OP ||
+                    // Unary context logic
+                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN ||
                             lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.RECALL) {
                         result = new Token(TokenType.UNARY_OP, "+", line);
                     } else {
-                        result = new Token(TokenType.ADD_OP, "+", line);
+                        result = new Token(TokenType.PLUS, "+", line);
                     }
                 }
                 break;
+                
             case '-':
                 if (isMatch('-'))
-                    result = new Token(TokenType.UNARY_OP, "--", line);
+                    result = new Token(TokenType.DECREMENT, "--", line);
                 else if (isMatch('='))
-                    result = new Token(TokenType.ASSIGN_OP, "-=", line);
+                    result = new Token(TokenType.MINUS_ASSIGN, "-=", line);
                 else {
-                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN_OP ||
+                    // Unary context logic
+                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN ||
                             lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.COMMA ||
                             lastTokenType == TokenType.RECALL) {
                         result = new Token(TokenType.UNARY_OP, "-", line);
                     } else {
-                        result = new Token(TokenType.ADD_OP, "-", line);
+                        result = new Token(TokenType.MINUS, "-", line);
                     }
                 }
                 break;
+                
             case '*':
                 if (isMatch('*'))
-                    result = new Token(TokenType.EXP_OP, "**", line);
+                    result = new Token(TokenType.EXPONENT, "**", line);
                 else if (isMatch('='))
-                    result = new Token(TokenType.ASSIGN_OP, "*=", line);
+                    result = new Token(TokenType.MUL_ASSIGN, "*=", line);
                 else
-                    result = new Token(TokenType.MUL_OP, "*", line);
+                    result = new Token(TokenType.STAR, "*", line);
                 break;
+                
             case '/':
                 if (isMatch('='))
-                    result = new Token(TokenType.ASSIGN_OP, "/=", line);
+                    result = new Token(TokenType.DIV_ASSIGN, "/=", line);
                 else
-                    result = new Token(TokenType.MUL_OP, "/", line);
+                    result = new Token(TokenType.SLASH, "/", line);
                 break;
+                
             case '%':
                 if (isMatch('='))
-                    result = new Token(TokenType.ASSIGN_OP, "%=", line);
+                    result = new Token(TokenType.MOD_ASSIGN, "%=", line);
                 else
-                    result = new Token(TokenType.MUL_OP, "%", line);
-                break;
-            case '=':
-                if (isMatch('='))
-                    result = new Token(TokenType.EQUALITY_OP, "==", line);
-                else
-                    result = new Token(TokenType.ASSIGN_OP, "=", line);
-                break;
-            case '!':
-                if (isMatch('='))
-                    result = new Token(TokenType.EQUALITY_OP, "!=", line);
-                else
-                    result = new Token(TokenType.UNARY_OP, "!", line);
-                break;
-            case '>':
-                if (isMatch('='))
-                    result = new Token(TokenType.REL_OP, ">=", line);
-                else
-                    result = new Token(TokenType.REL_OP, ">", line);
-                break;
-            case '<':
-                if (isMatch('='))
-                    result = new Token(TokenType.REL_OP, "<=", line);
-                else
-                    result = new Token(TokenType.REL_OP, "<", line);
-                break;
-            case '&':
-                if (isMatch('&'))
-                    result = new Token(TokenType.AND_OP, "&&", line);
-                else
-                    result = new Token(TokenType.ILLEGAL, "Invalid Character '&'", line);
-                break;
-            case '|':
-                if (isMatch('|'))
-                    result = new Token(TokenType.OR_OP, "||", line);
-                else
-                    result = new Token(TokenType.ILLEGAL, "Invalid Character '|'", line);
-                break;
-            case '^':
-                result = new Token(TokenType.XOR_OP, "^", line);
+                    result = new Token(TokenType.MOD, "%", line); // Fixed from ASSIGN in the diagram typo
                 break;
 
+            // --- RELATIONAL & LOGICAL OPERATORS (From Image 1) ---
+            case '=':
+                if (isMatch('='))
+                    result = new Token(TokenType.EQUAL_TO, "==", line);
+                else
+                    result = new Token(TokenType.ASSIGN, "=", line);
+                break;
+                
+            case '!':
+                if (isMatch('='))
+                    result = new Token(TokenType.NOT_EQUAL, "!=", line);
+                else
+                    result = new Token(TokenType.NOT, "!", line);
+                break;
+                
+            case '>':
+                if (isMatch('='))
+                    result = new Token(TokenType.GREATER_EQ, ">=", line);
+                else
+                    result = new Token(TokenType.GREATER, ">", line);
+                break;
+                
+            case '<':
+                if (isMatch('='))
+                    result = new Token(TokenType.LESS_EQ, "<=", line);
+                else
+                    result = new Token(TokenType.LESS, "<", line);
+                break;
+                
+            case '&':
+                if (isMatch('&'))
+                    result = new Token(TokenType.AND, "&&", line);
+                else
+                    result = new Token(TokenType.ILLEGAL, "Lexical Error: Expected '&&' but found '&'", line);
+                break;
+                
+            case '|':
+                if (isMatch('|'))
+                    result = new Token(TokenType.OR, "||", line);
+                else
+                    result = new Token(TokenType.ILLEGAL, "Lexical Error: Expected '||' but found '|'", line);
+                break;
+                
+            case '^':
+                result = new Token(TokenType.XOR, "^", line);
+                break;
+
+            // --- LITERALS AND IDENTIFIERS ---
             case '"':
                 result = scanThought(startPos);
                 break;
+                
             case '\'':
                 result = scanNeuron(startPos);
                 break;
 
             default:
-                pushbackChar();
+                pushbackChar(); // Push back the char so the specific scan methods can read it from the start
+                
                 if (isDigit(ch))
                     result = scanPulseOrSparkOrStream(startPos);
                 else if (isLetter(ch))
@@ -216,8 +235,9 @@ public class Scanner {
                 break;
         }
 
+        // --- CRITICAL UNARY/CONTEXT SAVING ---
         if (result != null) {
-            lastTokenType = result.type;
+            lastTokenType = result.getType(); 
             return result;
         }
 
