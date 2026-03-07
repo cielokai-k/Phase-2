@@ -1,0 +1,27 @@
+dream: This program tests valid and invalid identifiers
+
+activate {
+    dream: Valid identifiers
+    pulse validVar = 1;
+    pulse ValidVar = 2;
+    pulse valid_var = 3;
+    pulse validVar123 = 4;
+    pulse v_1_2_3 = 5;
+    pulse A = 6;
+    pulse z_ = 7;
+
+    dream: Invalid identifiers 
+    dream: Starts with an underscore
+    pulse _invalidStart = 10;
+    
+    dream: Starts with a digit
+    pulse 99problems = 20;
+    stream 3.14_badFloatVar = 30.0;
+    
+    dream: Contains special characters
+    pulse user@name = 40;
+    pulse price$ = 50;
+    
+    dream: Exceeds 256 characters (Lexical Error)
+    pulse aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 60;
+}

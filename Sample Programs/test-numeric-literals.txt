@@ -1,0 +1,35 @@
+dream: This program tests valid and invalid numeric literals
+
+activate {
+    dream: Valid PULSE (Integers)
+    pulse zero = 0;
+    pulse largePulse = 987654321;
+
+    dream: Valid STREAM (Standard Floats)
+    stream zeroFloat = 0.0;
+    stream pi = 3.14159;
+
+    dream: Valid SPARK (Floats with f/F)
+    spark sparkLower = 1.23f;
+    spark sparkUpper = 4.56F;
+    spark zeroSpark = 0.0f;
+
+    dream: Invalid Numeric literals
+    dream: Invalid Float
+    stream badFloat1 = 42.;
+    
+    dream: Invalid Identifier Start (Attached to a PULSE)
+    pulse badId1 = 123invalid;
+    pulse badId2 = 99_bottles;
+
+    dream: Invalid Identifier Start (Attached to a STREAM)
+    stream badId3 = 3.14badVar;
+    stream badId4 = 2.718_xyz;
+
+    dream: Invalid Identifier Start (Attached to a SPARK)
+    spark badId5 = 1.618fWrong;
+    spark badId6 = 0.5F_alsoWrong;
+    
+    dream: Multiple decimals
+    stream multiDot = 1.2.3;
+}
