@@ -245,22 +245,93 @@ public class Scanner {
     }
 
     public void skipWhitespace() {
-        while (!isAtEnd()) {
-            char ch = lookahead();
-            if (isWhitespace(ch)) {
-                if (ch == '\n')
-                    line++;
-                readNextChar();
-            } else if (ch == 'd') {
-                if (checkIfComment()) {
-                    // Comment was consumed, continue skipping whitespace
-                    continue;
-                } else {
-                    return;
+        while (true) {
+            int startPos = currentPos;
+            int startLine = line;
+
+            if (isAtEnd()) {
+                break; // EOF
+            }
+
+            char ch = readNextChar();
+
+            // Whitespace branch
+            if (ch == ' ' || ch == '\r') {
+                // q9 loop
+                while (!isAtEnd() && (lookahead() == ' ' || lookahead() == '\r')) {
+                    readNextChar();
                 }
-            } else {
-                // Reached a real token
+                continue; // q9 - accept (loop to accept more if ever)
+            } 
+            else if (ch == '\t') {
+                // q11 loop
+                while (!isAtEnd() && lookahead() == '\t') {
+                    readNextChar();
+                }
+                continue; // q9 - accept
+            } 
+            else if (ch == '\n') {
+                // q13 loop
+                line++;
+                while (!isAtEnd() && lookahead() == '\n') {
+                    line++;
+                    readNextChar();
+                }
+                continue; // q9 - accept state
+            } 
+            // "dream" comment branch
+            else if (ch == 'd') {
+                // q1 -> q2 -> q3 -> q4 -> q5
+                if (isMatch('r') && isMatch('e') && isMatch('a') && isMatch('m')) {
+                    
+                    if (isAtEnd()) {
+                        currentPos = startPos;
+                        break;
+                    }
+
+                    char next = readNextChar();
+
+                    if (next == ':') {
+                        // q5 to q6
+                        while (!isAtEnd()) {
+                            if (lookahead() == '\n') {
+                                readNextChar(); // q6 to -> q9 - accept
+                                line++;
+                                break;
+                            }
+                            readNextChar(); // Loop on q6 ~(\n)
+                        }
+                        continue; // Comment successfully consumed, loop again
+                    } 
+                    else if (next == ' ') {
+                        // Transition q5 -> space -> q7
+                        if (isMatch('{')) {
+                            // Transition q7 -> { -> q8
+                            boolean closed = false;
+                            while (!isAtEnd()) {
+                                char c = readNextChar();
+                                if (c == '\n') line++;
+                                else if (c == '}') {
+                                    closed = true;
+                                    break; // q8 -> } -> q9 (Accept)
+                                }
+                            }
+                            if (!closed) {
+                                System.err.println("[Warning: Unterminated multi-line dream comment starting at line " + startLine + "]");
+                            }
+                            continue; // Comment successfully consumed, loop again
+                        }
+                    }
+                } 
+                
+                currentPos = startPos;
+                line = startLine;
                 break;
+            } 
+            else {
+                // Reached a non-whitespace, non-comment character
+                currentPos = startPos; // Push back the character
+                break; // Exit the loop
             }
         }
     }
