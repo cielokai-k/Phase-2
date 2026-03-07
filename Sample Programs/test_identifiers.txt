@@ -2,6 +2,7 @@ dream: This program tests valid and invalid identifiers
 
 activate {
     dream: Valid identifiers
+    pulse a, b, c;
     pulse validVar = 1;
     pulse ValidVar = 2;
     pulse valid_var = 3;
