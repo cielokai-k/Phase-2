@@ -23,4 +23,9 @@ public class Token {
         }
         return "[" + type.name() + "]";
     }
+
+    // Getter method
+    public TokenType getType() {
+        return this.type;
+    }
 }
