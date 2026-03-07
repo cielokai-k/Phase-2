@@ -1,0 +1,251 @@
+activate {
+    dream: Comprehensive Lexical Error Test Cases
+
+    dream {
+        ERROR 1: Invalid Character - Dollar Sign
+        The '$' symbol is not recognized in the language
+    }
+    pulse money$ = 500;
+
+    dream {
+        ERROR 2: Invalid Character - At Symbol
+        The '@' symbol is not recognized
+    }
+    neuron email@ = '@';
+
+    dream {
+        ERROR 3: Invalid Character - Hash
+        The '#' symbol is not recognized (not used for comments)
+    }
+    pulse value#1 = 100;
+
+    dream {
+        ERROR 4: Invalid Character - Backtick
+        The backtick character is not supported
+    }
+    pulse `weird` = 42;
+
+    dream {
+        ERROR 5: Invalid Character - Tilde
+        The '~' symbol is not recognized
+    }
+    synapse ~signal = true;
+
+    dream {
+        ERROR 6: Single Ampersand
+        Single '&' requires double '&&' for logical AND
+    }
+    activate {
+        evaluate (true & false) { }
+    }
+
+    dream {
+        ERROR 7: Single Pipe
+        Single '|' requires double '||' for logical OR
+    }
+    activate {
+        evaluate (true | false) { }
+    }
+
+    dream {
+        ERROR 8: Question Mark
+        The '?' symbol is not supported (no ternary operator)
+    }
+    pulse result = (true) ? 1 : 0;
+
+    dream {
+        ERROR 9: Unterminated String Literal
+        String (thought) is missing closing double quote
+    }
+    thought message = "This string never ends;
+
+    dream {
+        ERROR 10: Unterminated String with Escape
+        String with invalid escape sequence and no closing quote
+    }
+    thought badEscape = "Hello \k World;
+
+    dream {
+        ERROR 11: Invalid Escape Sequence in String
+        Only \n, \t, \\, \", and \' are valid escapes in strings
+    }
+    thought invalid = "Invalid \x escape";
+
+    dream {
+        ERROR 12: Unterminated Character Literal
+        Character (neuron) is missing closing single quote
+    }
+    neuron badly = 'a;
+
+    dream {
+        ERROR 13: Empty Character Literal
+        Neuron must contain exactly one character
+    }
+    neuron empty = '';
+
+    dream {
+        ERROR 14: Too Many Characters in Literal
+        Neuron must contain exactly one character, not multiple
+    }
+    neuron multi = 'abc';
+
+    dream {
+        ERROR 15: Character Literal with Invalid Escape
+        Invalid escape sequence in character (neuron) literal
+    }
+    neuron invalidEsc = '\x';
+
+    dream {
+        ERROR 16: Character Literal Spanning Multiple Lines
+        Character literal cannot contain newline
+    }
+    neuron newline = '
+    ';
+
+    dream {
+        ERROR 17: Malformed Float - Multiple Decimal Points
+        Spark literals cannot have multiple decimal points
+    }
+    spark broken = 3.14.159f;
+
+    dream {
+        ERROR 18: Malformed Float - Decimal Without Trailing Digits
+        Spark requires at least one digit after the decimal point
+    }
+    spark incomplete = 42.f;
+
+    dream {
+        ERROR 19: Numeric Literal with Invalid Suffix
+        Integer and float literals cannot have letter suffixes
+    }
+    pulse badNum = 123L;
+
+    dream {
+        ERROR 20: Numeric Literal - Letters Attached
+        Numbers cannot have letters directly attached without operator
+    }
+    pulse weirdNum = 42abc;
+
+    dream {
+        ERROR 21: Numeric Literal - Underscore Attached
+        Numbers cannot have underscores attached
+    }
+    pulse underscore = 100_000;
+
+    dream {
+        ERROR 22: Invalid Characters in Sequence
+        Multiple consecutive invalid characters grouped together
+    }
+    pulse value = $$##@@;
+
+    dream {
+        ERROR 23: Mixed Invalid Operators
+        Combining invalid character patterns
+    }
+    activate {
+        pulse x = 5 &| 3;
+    }
+
+    dream {
+        ERROR 24: Invalid Operator Combination
+        The `<>` operator is not defined (use != for not equal)
+    }
+    evaluate (5 <> 3) { }
+
+    dream {
+        ERROR 25: Very Long Identifier - Exceeds 256 Characters
+        Identifiers have a maximum length of 256 characters
+    }
+    pulse verylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenameverylongvariablenamethatexceedsmaxlength = 1;
+
+    dream {
+        ERROR 26: Unclosed Multi-line Comment
+        Multi-line comments (dream { }) must be properly closed
+    }
+    dream {
+        This comment never closes properly
+
+    dream {
+        ERROR 27: Invalid Character in Identifier
+        Hyphens are not allowed in identifiers
+    }
+    pulse my-variable = 10;
+
+    dream {
+        ERROR 28: Leading Digit in Identifier
+        Identifiers cannot start with a digit
+    }
+    pulse 1stVariable = 100;
+
+    dream {
+        ERROR 29: Invalid Escape in String - Backslash
+        Invalid escape sequence \/ in string
+    }
+    thought path = "C:\folder\/file";
+
+    dream {
+        ERROR 30: Invalid Character - Equals Chain
+        Triple equals (===) is not a valid operator
+    }
+    evaluate (a === b) { }
+
+    dream {
+        ERROR 31: Invalid Character - Exclamation Chain
+        Double exclamation (!!) with space is not valid
+    }
+    pulse result = !!x;
+
+    dream {
+        ERROR 32: String with Unescaped Quote
+        Double quotes inside string must be escaped as \"
+    }
+    thought quote = "She said "Hello" to me";
+
+    dream {
+        ERROR 33: Character with Unescaped Single Quote
+        Single quotes inside neuron must be escaped as \'
+    }
+    neuron apos = ''it'';
+
+    dream {
+        ERROR 34: Invalid Numeric - Leading Decimal
+        Numbers must have at least one digit before decimal point
+    }
+    stream decimal = .5;
+
+    dream {
+        ERROR 35: Invalid Numeric - Only Exponent
+        Cannot have just the exponent operator without operands
+    }
+    pulse power = **;
+
+    dream {
+        ERROR 36: Consecutive String Literals Without Operator
+        Two strings in a row need an operator between them
+    }
+    thought combined = "Hello" "World";
+
+    dream {
+        ERROR 37: Invalid Characters - Backticks in String
+        Backticks are not supported anywhere, even in strings
+    }
+    thought template = `Hello ${name}`;
+
+    dream {
+        ERROR 38: Special Unicode Character
+        Non-ASCII characters may cause issues
+    }
+    pulse value = 100 ÷ 2;
+
+    dream {
+        ERROR 39: Malformed Escape in Thought - Too Many Backslashes
+        Multiple consecutive backslashes need proper escaping
+    }
+    thought path = "C:\\\\server\\share";
+
+    dream {
+        ERROR 40: Invalid Operator - Exclamation Without Operand
+        Cannot have trailing operators
+    }
+    pulse x = 5!;
+}

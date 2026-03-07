@@ -1,0 +1,15 @@
+activate {
+    pulse validValue = 10;
+    
+    pulse money$ = 500;
+    
+    neuron char = '';
+    
+    thought unclosed = "This never ends;
+    
+    spark broken = 3.14.159f;
+    
+    pulse weirdNum = 42abc;
+    
+    evaluate (true & false) { }
+}

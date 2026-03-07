@@ -1,0 +1,120 @@
+activate {
+    dream: Edge Cases and Challenging Lexical Errors
+
+    dream { ERROR 1: Unterminated String at End of File } thought eof = "unterminated
+
+    dream { 
+        ERROR 2: Multiple Invalid Characters Together 
+    }
+    pulse x = $$@@##;
+
+    dream { ERROR 3: String with Newline Before Close }
+    thought multiline = "Line 1
+Line 2";
+
+    dream { ERROR 3b: Multiple Consecutive Unterminated Strings }
+    thought str1 = "unclosed1;
+    thought str2 = "unclosed2;
+    thought str3 = "unclosed3;
+
+    dream { 
+        ERROR 4: Character Literal Issues - Multiple Types 
+    }
+    neuron e1 = '';
+    neuron e2 = 'abc';
+    neuron e3 = 'x
+    ';
+    neuron e4 = '\q';
+
+    dream { ERROR 5: Invalid Floats - Comprehensive }
+    spark f1 = 3.14.159f;
+    spark f2 = 123.f;
+    spark f3 = .456f;
+
+    dream { ERROR 6: Numbers with Bad Suffixes }
+    pulse n1 = 42L;
+    pulse n2 = 123D;
+    pulse n3 = 99_south;
+    pulse n4 = 0xABCD;
+
+    dream { ERROR 7: Single Character Operators Missing Pairs }
+    evaluate (x & y) { }
+    evaluate (x | y) { }
+
+    dream { ERROR 8: Invalid Escape Sequences in Strings }
+    thought e1 = "Invalid \a escape";
+    thought e2 = "Bad \z sequence";
+    thought e3 = "Multiple \x\y\z escapes";
+
+    dream { 
+        ERROR 9: Identifier Length Boundary Testing
+    }
+    pulse aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_exceed_limit = 1;
+
+    dream { ERROR 10: Mixed String Literal Issues }
+    thought s1 = "Unclosed";
+    thought s2 = "Contains \x invalid";
+    thought s3 = "Contains unescaped "quote"";
+
+    dream { ERROR 11: Bizarre Invalid Character Mix }
+    pulse result = x ~~ y;
+    pulse result2 = x $$ y;
+    pulse result3 = x @@ y;
+
+    dream { ERROR 12: Invalid Pattern Recognition }
+    activate {
+        if (condition) &&& {
+        }
+    }
+
+    dream { ERROR 13: Consecutive Operators }
+    pulse x = 5 ++ ++;
+    pulse y = 3 -- --;
+    pulse z = a ++ -- ++ b;
+
+    dream { ERROR 14: Decimal Number Edge Cases }
+    stream d1 = 123.;
+    stream d2 = .789;
+    stream d3 = 1.2.3;
+
+    dream { ERROR 15: Character Literal Boundary Cases }
+    neuron n1 = 'ab';
+    neuron n2 = '\\n';
+    neuron n3 = '\'';
+    neuron n4 = '
+';
+
+    dream { ERROR 16: Special Invalid Combinations }
+    pulse test = (5);
+    if_this_is_not_keyword = 10;
+    pulse v@lue = 20;
+    pulse mon3y$ = 100;
+
+    dream { ERROR 17: Unterminated Escaped String }
+    thought danger = "Ends with backslash \";
+
+    dream { ERROR 18: Invalid Operators Not in Switch Case }
+    evaluate (5 <=> 3) { }
+    evaluate (5 ::: 3) { }
+    evaluate (5 ~~~ 3) { }
+
+    dream { ERROR 19: Multiple Decimal Points Variations }
+    stream bad1 = 1.2.3.4;
+    stream bad2 = 1..2;
+    stream bad3 = ...123;
+
+    dream { ERROR 20: Keyword-like But Invalid Identifiers }
+    pulse th0ught = "valid id";
+    pulse _leading = 10;
+    pulse 1_leading = 20;
+    pulse $money = 100;
+
+    dream { 
+        ERROR 21: Unclosed Multi-line Comment Near EOF
+    }
+    pulse complete = 10;
+
+    dream {
+        This comment text will cause an error
+        because it never closes
+}
