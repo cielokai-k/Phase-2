@@ -1,0 +1,52 @@
+dream: This program tests valid and invalid use of the operators
+
+activate {
+    dream: Arithmetic and Assignment
+    pulse a = 10 + 5;
+    a += 2;
+    
+    pulse b = a - 3;
+    a -= 1;
+    
+    pulse c = a * 4;
+    a *= 2;
+    
+    pulse d = a / 2;
+    a /= 1;
+    
+    pulse e = a % 3;
+    a %= 2;
+    
+    pulse f = a ** 2;
+
+    dream: Increment and Decrement
+    a++;
+    a--;
+
+    dream: Relational operators
+    synapse r1 = a == 10;
+    synapse r2 = a != 5;
+    synapse r3 = a > 3;
+    synapse r4 = a >= 3;
+    synapse r5 = a < 20;
+    synapse r6 = a <= 20;
+
+    dream: Logical and Bitwise operators
+    synapse l1 = a > 5 && a < 15;
+    synapse l2 = a == 10 || a == 20;
+    synapse l3 = !true;
+    pulse bit1 = a ^ b;
+
+    dream: Unary
+    pulse u1 = -5;
+    pulse u2 = +10;
+
+    dream: Inside Looping Structure
+    echo (pulse i = 0; i < 10; i++) {
+        dream: This is inside a loop
+    }
+    
+    dream: Invalid Operators
+    pulse bad1 = a & b;
+    pulse bad2 = a | b;
+}
