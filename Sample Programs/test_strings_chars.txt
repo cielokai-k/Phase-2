@@ -1,0 +1,41 @@
+dream: This program tests valid and invalid string and character literals
+
+activate {
+    dream: Valid Thoughts (String)
+    thought basicString = "Hello, Lexer!";
+    thought emptyString = "";
+    thought validEscapes = "Line1\nLine2\tTabbed\\Escaped\"Quotes\'";
+
+    dream: Invalid Thoughts (String)
+    dream: Invalid escape sequence
+    thought badEscape = "This has a bad \x escape";
+    
+    dream: Raw newline inside string
+    thought brokenLine = "This string
+    has a newline in it";
+    
+    dream: Unterminated string (Missing closing quote)
+    thought missingQuote = "No closing quote here 
+
+    dream: Valid Neuron (Character)
+    neuron letterA = 'A';
+    neuron spaceChar = ' ';
+    neuron escNewline = '\n';
+    neuron escTab = '\t';
+    neuron escSlash = '\\';
+    neuron escSingleQuote = '\'';
+    neuron escDoubleQuote = '\"';
+
+    dream: Invalid Neuron (Character)
+    dream: Empty character (Fails to reach q2)
+    neuron emptyChar = '';
+
+    dream: Multiple characters (Fails to reach q4)
+    neuron tooLong = 'abc';
+    
+    dream: Invalid escape sequence (Fails to reach q2)
+    neuron badCharEscape = '\z';
+    
+    dream: Missing closing quote
+    neuron unclosedChar = 'x;
+}
