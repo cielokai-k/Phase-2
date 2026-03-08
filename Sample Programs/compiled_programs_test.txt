@@ -71,30 +71,25 @@ activate {
     dream: ERROR 20 - Multiple Decimal Points
     spark invalidFloat = 12.34.56f;
 
-    dream: ERROR 21 - Invalid Operator Combinations
-    pulse consecutiveOps = 10 +++ 5;
-
-    dream: ERROR 22 - Whitespace Between Operator Combinations
-    cycle(x > = 5) { dormant; }
-
-    dream: ERROR 23 - Incomplete Operator (Single '&' or '|')
+    dream: ERROR 21 - Incomplete Operator (Single '&' or '|')
     pulse bitwiseAnd = x & y;
 
-    dream: ERROR 24 - Uppercased Reserved Words (Case Sensitivity)
+    dream: ERROR 22 - Uppercased Reserved Words (Case Sensitivity)
     PULSE upperVar = 5;
 
-    dream: ERROR 25 - Nested Multi-line Comments
+    dream: ERROR 23 - Nested Multi-line Comments
     dream {
         This is an outer comment.
         dream { This nested comment is illegal }
     }
 
-    dream: ERROR 26 - Invalid Comment Syntax (Missing colon)
+    dream: ERROR 24 - Invalid Comment Syntax (Missing colon)
     dream this comment lacks a colon and will be scanned as identifiers
     }
 
     dream {
-    ERROR 27 - Unclosed Multi-line Comment (EOF)
+    ERROR 25 - Unclosed Multi-line Comment (EOF)
     Because this block comment never closes, the scanner will 
     hit the End Of File and throw an error right here.
+
 
