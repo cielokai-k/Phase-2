@@ -5,7 +5,7 @@ public class Tester {
 
     public static void main(String[] args) {
         // Put the file name here
-        String filePath = "Sample Programs" + File.separator + "test_whitespace.txt";
+        String filePath = "Sample Programs" + File.separator + "test_numeric_literals.txt";
 
         // Initialiaze a Symbol Table
         SymTable symTable = new SymTable();

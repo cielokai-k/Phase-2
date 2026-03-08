@@ -12,7 +12,6 @@ public class Scanner {
     public Map<String, TokenType> keywords;
     public int currentPos;
     public int line;
-    private TokenType lastTokenType = null;
 
     private String sourceCode;
 
@@ -110,13 +109,7 @@ public class Scanner {
                 } else if (isMatch('=')) {
                     result = new Token(TokenType.PLUS_ASSIGN, "+=", line);
                 } else {
-                    // Unary context logic
-                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN
-                            || lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.RECALL) {
-                        result = new Token(TokenType.UNARY_OP, "+", line);
-                    } else {
-                        result = new Token(TokenType.PLUS, "+", line);
-                    }
+                    result = new Token(TokenType.PLUS, "+", line);
                 }
                 break;
 
@@ -126,14 +119,7 @@ public class Scanner {
                 } else if (isMatch('=')) {
                     result = new Token(TokenType.MINUS_ASSIGN, "-=", line);
                 } else {
-                    // Unary context logic
-                    if (lastTokenType == null || lastTokenType == TokenType.ASSIGN
-                            || lastTokenType == TokenType.L_PAREN || lastTokenType == TokenType.COMMA
-                            || lastTokenType == TokenType.RECALL) {
-                        result = new Token(TokenType.UNARY_OP, "-", line);
-                    } else {
-                        result = new Token(TokenType.MINUS, "-", line);
-                    }
+                    result = new Token(TokenType.MINUS, "-", line);
                 }
                 break;
 
@@ -248,11 +234,7 @@ public class Scanner {
                 break;
         }
 
-        // Unary
-        if (result != null) {
-            lastTokenType = result.getType();
-            return result;
-        }
+        if (result != null) return result;
 
         return new Token(TokenType.ILLEGAL, "Unknown Error", line);
     }
@@ -327,7 +309,8 @@ public class Scanner {
                                 }
                             }
                             if (!closed) {
-                                System.err.println("[Warning: Unterminated multi-line dream comment starting at line " + startLine + "]");
+                                System.err.println("[Warning: Unterminated multi-line dream comment starting at line "
+                                        + startLine + "]");
                             }
                             continue; // Comment successfully consumed, loop again
                         }
@@ -470,7 +453,8 @@ public class Scanner {
                     }
 
                     String badText = sourceCode.substring(startPos, currentPos).replaceAll("[\\r\\n]", "");
-                    return new Token(TokenType.ILLEGAL, "Invalid escape sequence in thought literal '" + badText + "'", startLine);
+                    return new Token(TokenType.ILLEGAL, "Invalid escape sequence in thought literal '" + badText + "'",
+                            startLine);
                 }
 
             } else if (ch == '\n') {

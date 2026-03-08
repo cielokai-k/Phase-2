@@ -19,7 +19,7 @@ public enum TokenType {
     PLUS, MINUS, STAR, SLASH, MOD, EXPONENT,
     
     // Unary & Increment/Decrement
-    UNARY_OP, INCREMENT, DECREMENT, NOT,
+    INCREMENT, DECREMENT, NOT,
     
     // Assignment & Compound Assignment
     ASSIGN, PLUS_ASSIGN, MINUS_ASSIGN, MUL_ASSIGN, DIV_ASSIGN, MOD_ASSIGN,

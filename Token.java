@@ -14,10 +14,6 @@ public class Token {
     public String displayToken() {
         if (type == TokenType.IDENTIFIER) {
             return "[ID: " + lexeme + "]"; 
-        } else if (type == TokenType.UNARY_OP) {
-            if (lexeme.equals("-")) return "[UNARY_MINUS]";
-            if (lexeme.equals("+")) return "[UNARY_PLUS]";
-            return "[" + type.name() + "]";
         } else if (type == TokenType.ILLEGAL) {
             return "[ERROR] " + lexeme; 
         }

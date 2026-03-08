@@ -13,6 +13,10 @@ activate {
     spark sparkLower = 1.23f;
     spark sparkUpper = 4.56F;
     spark zeroSpark = 0.0f;
+    
+    dream: Negative and Positive Numbers
+    pulse positive = +2;
+    pulse negative = -3;
 
     dream: Invalid Numeric literals
     dream: Invalid Float
@@ -34,7 +38,7 @@ activate {
     stream multiDot = 1.2.3;
     stream multi = 12.3.;
 
-    dream: Missing digit
+    dream: Missing whole digit
     pulse missing = .6;
     pulse missing2 = .7;
 }
