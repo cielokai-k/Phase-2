@@ -473,6 +473,12 @@ public class Scanner {
     public Token scanNeuron(int startPos) {
         char ch = lookahead();
 
+        if (ch == '\n' || ch == '\r' || isAtEnd()) {
+            String badText = sourceCode.substring(startPos, currentPos);
+            return new Token(TokenType.ILLEGAL, "Unterminated neuron (character) literal '" + badText + "'", line);
+        }
+
+
         if (ch == '\\') {
             // q1 to q3
             readNextChar(); // Consume '\'
@@ -490,6 +496,11 @@ public class Scanner {
         } else {
             // Empty literal ('') - fails to reach q2
             return consumeAndReturnInvalidNeuron(startPos);
+        }
+
+        if (lookahead() == '\n' || lookahead() == '\r' || isAtEnd()) {
+            String badText = sourceCode.substring(startPos, currentPos);
+            return new Token(TokenType.ILLEGAL, "Unterminated neuron (character) literal '" + badText + "'", line);
         }
 
         // In q2 - must havee a closing quote to transition to q4

@@ -5,7 +5,7 @@ public class Tester {
 
     public static void main(String[] args) {
         // Put the file name here
-        String filePath = "Sample Programs" + File.separator + "error_free.txt";
+        String filePath = "Sample Programs" + File.separator + "test_strings_chars.txt";
 
         // Initialiaze a Symbol Table
         SymTable symTable = new SymTable();
@@ -30,21 +30,18 @@ public class Tester {
             token = scanner.getNextToken();
             if (token.type != TokenType.EOF) {
 
-                // Error already includes the line number and reason - not included how to fix the error
-                if (token.type == TokenType.ILLEGAL) {
-                    System.err.print("[ERROR: Line " + token.line + " | Reason: " + token.lexeme + "] ");
-                    continue;
-                }
-
-                // Normal Same-Line Formatting
                 if (lastPrintedLine != -1 && token.line > lastPrintedLine) {
-                    System.out.println();
+                    System.out.println(); 
                 }
 
-                // Print the token with a space
-                System.out.print(token.displayToken() + " ");
+                // Print the token
+                if (token.type == TokenType.ILLEGAL) {
+                    System.out.print("[ERROR: Line " + token.line + " | Reason: " + token.lexeme + "] ");
+                } else {
+                    // Print normal tokens
+                    System.out.print(token.displayToken() + " ");
+                }
 
-                // Update the tracker to this token's line
                 lastPrintedLine = token.line;
             }
         } while (token.type != TokenType.EOF);
