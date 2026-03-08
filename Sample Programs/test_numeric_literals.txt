@@ -32,4 +32,9 @@ activate {
     
     dream: Multiple decimals
     stream multiDot = 1.2.3;
+    stream multi = 12.3.;
+
+    dream: Missing digit
+    pulse missing = .6;
+    pulse missing2 = .7;
 }

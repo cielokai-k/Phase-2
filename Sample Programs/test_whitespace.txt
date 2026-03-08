@@ -1,14 +1,13 @@
 activate {
     pulse x = 10; dream: This is a single-line comment at the end of a line
     pulse y = 20;
+
+    dream { outer dream { nested } back to outer }
     
     x = x + dream { This is a multi-line 
                     comment inside 
                     an expression } y;
-    pulse b = 10 + dream { This is a 
-                        multi-line comment 
-                        spanning several lines 
-                        to test the scanner } 20;
+    pulse b = 10 + dream { this is a comment inside a code } 20;
 
     dream: Testing the "Backtracking" logic (The "dream" variable)
     pulse dream = 100;
