@@ -5,7 +5,7 @@ public class Tester {
 
     public static void main(String[] args) {
         // Put the file name here
-        String filePath = "Sample Programs" + File.separator + "small_error_test.txt";
+        String filePath = "Sample Programs" + File.separator + "test_whitespace.txt";
 
         // Initialiaze a Symbol Table
         SymTable symTable = new SymTable();
@@ -23,6 +23,9 @@ public class Tester {
 
         Token token;
 
+        // Track the line of the last token read
+        int lastPrintedLine = -1;
+
         do {
             token = scanner.getNextToken();
             if (token.type != TokenType.EOF) {
@@ -34,14 +37,15 @@ public class Tester {
                 }
 
                 // Normal Same-Line Formatting
-                System.out.print(token.displayToken() + " ");
-
-                // Format to create a new line if statement logicall ends
-                if (token.type == TokenType.SEMICOLON
-                        || token.type == TokenType.L_BRACE
-                        || token.type == TokenType.R_BRACE) {
-                    System.out.println();
+                if (lastPrintedLine != -1 && token.line > lastPrintedLine) {
+                    System.out.println(); 
                 }
+                
+                // Print the token with a space
+                System.out.print(token.displayToken() + " "); 
+                
+                // Update the tracker to this token's line
+                lastPrintedLine = token.line;
             }
         } while (token.type != TokenType.EOF);
     }
