@@ -1,0 +1,65 @@
+activate {
+    dream {
+        SCANNER ERROR TEST
+        This program uses highly unusual syntax, tricky spacing, and
+        operator combinations to try and break the Lexical Analyzer.
+    }
+
+    dream {
+        ERROR 1: Empty Literals
+        Does your scanner crash when trying to substring an empty string/char?
+    }
+    thought emptyString = "";
+    neuron emptyChar = '';
+
+    dream {
+        ERROR 2: Escape Sequences
+        The scanner correctly ignores escaped quotes inside strings
+    }
+    thought quoteInside = "He said \"Hello\" to me";
+    neuron newlineChar = '\n';
+
+    dream {
+        ERROR 3: Maximum Operator Usage
+        It should separate a cluster of math operators correctly
+        (Should be recognized as +, ++, or ++, +)
+    }
+    pulse consecutiveOperators = 10 +++ 5;
+    pulse moreOperators = 20 --- 2;
+    pulse chainedAssign = a **= 2;
+
+    dream {
+        ERROR 4: Missing Decimal
+        In Cerebra, floats (spark/stream) should likely start with a number (0.5).
+    }
+    spark nakedDecimal = .5f;
+    stream nakedStream = .75;
+
+    dream {
+        ERROR 5: Unusual Identifiers
+        Identifiers starting or ending with underscores are valid in Java.
+        Make sure isAlpha() regex logic handle them properly
+    }
+    pulse _validStart = 100;
+    pulse validEnd_ = 200;
+    pulse _= 300; 
+
+    dream {
+        ERROR 6: Missing Spaces
+        The scanner should be able to separate numbers, operators, and braces 
+        even if the programmer did not use spaces
+    }
+    cycle(isRunning==1){react{pulse x=1+1;}dormant;}
+
+    dream {
+        ERROR 7: Unrecognized Escape Characters
+        User types an invalid escape sequence
+    }
+    neuron badEscape = '\q';
+
+    dream {
+        ERROR 8: EOF immediately after a single-line comment
+        (Make sure there is no blank line or newline after this single-line comment below)
+    }
+}
+dream: File ends exactly here
