@@ -399,7 +399,7 @@ public class Scanner {
 
                 // q6 to q7 - return SPARK_LIT
                 String text = sourceCode.substring(startPos, currentPos);
-                return new Literal(TokenType.SPARK_LIT, text, text, line);
+                return new Token(TokenType.SPARK_LIT, text, line);
             }
 
             if (isLetter(lookahead()) || lookahead() == '_') {
@@ -408,7 +408,7 @@ public class Scanner {
 
             // q4 to q5 - no "f" or "F" then pushback other character and STREAM_LIT is read
             String text = sourceCode.substring(startPos, currentPos);
-            return new Literal(TokenType.STREAM_LIT, text, Double.parseDouble(text), line);
+            return new Token(TokenType.STREAM_LIT, text, line);
         }
 
         if (isLetter(lookahead()) || lookahead() == '_') {
@@ -417,7 +417,7 @@ public class Scanner {
 
         // q1 to q2 - no "." then pushback other character and PULSE_LIT is read
         String text = sourceCode.substring(startPos, currentPos);
-        return new Literal(TokenType.PULSE_LIT, text, Integer.parseInt(text), line);
+        return new Token(TokenType.PULSE_LIT, text, line);
     }
 
     public Token scanThought(int startPos) {

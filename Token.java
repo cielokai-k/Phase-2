@@ -13,10 +13,14 @@ public class Token {
     // Display Token
     public String displayToken() {
         if (type == TokenType.IDENTIFIER) {
-            return "[ID: " + lexeme + "]"; 
+            return "[ID: " + lexeme + "]";
         } else if (type == TokenType.ILLEGAL) {
-            return "[ERROR] " + lexeme; 
+            return "[ERROR] " + lexeme;
+        } else if (type == TokenType.PULSE_LIT || type == TokenType.STREAM_LIT || type == TokenType.SPARK_LIT
+                || type == TokenType.THOUGHT_LIT || type == TokenType.NEURON_LIT) {
+            return "[" + type.name() + ": " + lexeme + "]";
         }
+
         return "[" + type.name() + "]";
     }
 
