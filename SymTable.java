@@ -1,7 +1,9 @@
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class SymTable {
+
     public Map<String, IdDetails> table;
 
     // Constructor
@@ -26,9 +28,10 @@ public class SymTable {
 
 // IdDetails as composition
 class IdDetails {
+
     public String lexeme;
     public TokenType type;
-    public String dataType = null; 
+    public String dataType = null;
     public Object value = null;
 
     // Constructor

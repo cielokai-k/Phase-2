@@ -13,6 +13,10 @@ action pulse calculateSquare(pulse num) {
     recall num * num;
 }
 
+action void displayWelcome() { 
+    express("Welcome to Cerebra's sample program!");
+}
+
 activate {
 
     dream {
@@ -90,4 +94,14 @@ activate {
 
     dream: Initialize a positive number (Unary plus)
     pulse x = +6;
+
+    dream {
+        5. Built-in function 'length' 
+        length function is used to retrieve the numbers of characters 
+        in a thought.
+    }
+
+    pulse version = 2;
+    thought versionInfo = "Cerebra Version " + transcribe(version);
+    express(versionInfo);
 }

@@ -5,7 +5,7 @@ public class Tester {
 
     public static void main(String[] args) {
         // Put the file name here
-        String filePath = "Sample Programs" + File.separator + "test_numeric_literals.txt";
+        String filePath = "Sample Programs" + File.separator + "error_free.txt";
 
         // Initialiaze a Symbol Table
         SymTable symTable = new SymTable();
@@ -38,12 +38,12 @@ public class Tester {
 
                 // Normal Same-Line Formatting
                 if (lastPrintedLine != -1 && token.line > lastPrintedLine) {
-                    System.out.println(); 
+                    System.out.println();
                 }
-                
+
                 // Print the token with a space
-                System.out.print(token.displayToken() + " "); 
-                
+                System.out.print(token.displayToken() + " ");
+
                 // Update the tracker to this token's line
                 lastPrintedLine = token.line;
             }
