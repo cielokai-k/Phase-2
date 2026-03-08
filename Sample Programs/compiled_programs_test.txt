@@ -1,0 +1,98 @@
+activate {
+    dream {
+        CEREBRA: COMPLETE LEXICAL ERROR TEST
+        This program intentionally triggers every Lexical Error 
+        defined in the Programming Language.
+    }
+   
+    dream: ERROR 1 - Identifier that Starts with a Digit
+    stream 1stAttempt = 10.5;
+
+    dream: ERROR 2 - Identifier that Contains Invalid Character
+    pulse money$ = 500;
+    thought user@name = "John";
+
+    dream: ERROR 3 - Identifier Exceeds Maximum Length (256+ chars)
+    pulse aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1;
+
+    dream: ERROR 4 - Invalid Use of Underscore (Cannot start with it)
+    pulse _age = 20;
+
+    dream: ERROR 5 - Invalid Character (Not in character set)
+    pulse bitwise = ~10;
+    pulse hashtag = #5;
+
+    dream: ERROR 6 - Empty Character
+    neuron emptyChar = '';
+
+    dream: ERROR 7 - Multi-character Character
+    neuron multiChar = 'yz';
+
+    dream: ERROR 8 - Unterminated Character
+    neuron brokenChar = 'a;
+
+    dream: ERROR 9 - Invalid Escape in Character
+    neuron badEscape = '\q';
+
+    dream: ERROR 10 - Newline in Character
+    neuron nlChar = '
+    ';
+
+    dream: ERROR 11 - Unterminated String
+    thought brokenString = "This string never ends;
+
+    dream: ERROR 12 - Invalid Escape in String
+    thought badStrEsc = "The value is \c twelve";
+
+    dream: ERROR 13 - Newline in String
+    thought nlStr = "I am a 
+    Teacher";
+
+    dream: ERROR 14 - Invalid Numerical Suffix
+    pulse badSuffix1 = 123yz;
+    spark badSuffix2 = 15.3d;
+
+    dream: ERROR 15 - Invalid Float Suffix Placement (Spaces not allowed)
+    spark spacedSuffix = 3.14 f;
+
+    dream: ERROR 16 - Whitespace in Numeric Literals
+    spark brokenNum = 3. 14;
+
+    dream: ERROR 17 - Multiple f/F Suffixes in Float Literal
+    spark multiSuffix = 3.14ff;
+
+    dream: ERROR 18 - Malformed Decimal (Missing leading digits)
+    spark nakedDecimal = .5f;
+    stream nakedStream = .75;
+
+    dream: ERROR 19 - Multiple Decimal Points
+    spark invalidFloat = 12.34.56f;
+
+    dream: ERROR 20 - Invalid Operator Combinations
+    pulse consecutiveOps = 10 +++ 5;
+
+    dream: ERROR 21 - Whitespace Between Operator Combinations
+    cycle(x > = 5) { dormant; }
+
+    dream: ERROR 22 - Incomplete Operator (Single '&' or '|')
+    pulse bitwiseAnd = x & y;
+
+    dream: ERROR 23 - Uppercased Reserved Words (Case Sensitivity)
+    PULSE upperVar = 5;
+
+
+
+    dream: ERROR 24 - Nested Multi-line Comments
+    dream {
+        This is an outer comment.
+        dream { This nested comment is illegal }
+    }
+
+    dream: ERROR 25 - Invalid Comment Syntax (Missing colon)
+    dream this comment lacks a colon and will be scanned as identifiers
+}
+
+dream {
+    ERROR 26 - Unclosed Multi-line Comment (EOF)
+    Because this block comment never closes, the scanner will 
+    hit the End Of File and throw an error right here.
