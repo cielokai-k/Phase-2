@@ -1,0 +1,58 @@
+activate {
+    dream {
+        MORE SCANNING ERROR DEMONSTRATIONS
+        This program intentionally violates every single lexical rule 
+        to test the scanner's robustness.
+    }
+
+    dream {
+        ERROR 1: Invalid Character in Identifier
+        Identifiers cannot contain special characters like '$' or '@'.
+    }
+    pulse money$ = 500;
+    thought user@name = "John";
+
+    dream {
+        ERROR 2: Invalid Identifier Start
+        Identifiers must begin with a letter. Starting with a digit is forbidden.
+    }
+    stream 1stAttempt = 10.5;
+
+    dream {
+        ERROR 3: Identifier Length Limit Exceeded
+        Identifiers have a maximum length of 256 characters. 
+        The scanner should flag this 257-character variable name.
+    }
+    pulse aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1;
+
+    dream {
+        ERROR 4: Malformed Float Literal
+        Multiple decimal points are not recognized as a valid numeric token.
+    }
+    spark invalidFloat = 12.34.56f;
+
+    dream {
+        ERROR 5: Unknown/Unsupported Operator
+        Symbols like '~' and '#' are not part of Cerebra's character set.
+    }
+    pulse bitwise = ~10;
+    pulse hashtag = #5;
+
+    dream {
+        ERROR 6: Unterminated Character Literal (neuron)
+        A neuron requires a closing single quote. 
+        The scanner should error out at the end of this line.
+    }
+    neuron brokenChar = 'a;
+
+    dream {
+        ERROR 7: Unterminated String Literal (thought)
+        A thought requires a closing double quote.
+        The scanner should error out at the end of this line.
+    }
+    thought brokenString = "This string never ends;
+
+    dream {
+        ERROR 8: Unterminated Block Comment (EOF)
+        A multi-line comment opens here but never finds its closing brace.
+        The scanner will hit the End Of File (EOF) and throw an error.
