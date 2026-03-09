@@ -1,4 +1,3 @@
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -234,7 +233,8 @@ public class Scanner {
                 break;
         }
 
-        if (result != null) return result;
+        if (result != null)
+            return result;
 
         return new Token(TokenType.ILLEGAL, "Unknown Error", line);
     }
@@ -477,7 +477,6 @@ public class Scanner {
             String badText = sourceCode.substring(startPos, currentPos);
             return new Token(TokenType.ILLEGAL, "Unterminated neuron (character) literal '" + badText + "'", line);
         }
-
 
         if (ch == '\\') {
             // q1 to q3
