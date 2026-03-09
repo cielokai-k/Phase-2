@@ -45,5 +45,9 @@ public class Tester {
                 lastPrintedLine = token.line;
             }
         } while (token.type != TokenType.EOF);
+
+        System.out.println();
+        System.out.println("Symbol Table:");
+        symTable.displayTable();
     }
 }
