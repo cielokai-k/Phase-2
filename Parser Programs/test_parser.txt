@@ -1,0 +1,14 @@
+dream: ---- function with parameters and a return value ----
+action pulse add(pulse a, pulse b) {
+    recall a++;
+}
+
+dream: ---- function returning a stream ----
+action stream average(stream x, stream y) {
+    recall (x + y) / 2.0;
+}
+
+dream: ---- function with a synapse return type ----
+action synapse isEven(pulse n) {
+    recall n % 2 == 0;
+}

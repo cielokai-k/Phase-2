@@ -636,4 +636,21 @@ public class Scanner {
     private boolean isWhitespace(char ch) {
         return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
     }
+
+// parser
+public Token lookaheadToken() {
+    if (isAtEnd()) {
+        return new Token(TokenType.EOF, "", line);
+    }
+    
+    int savedPos = currentPos;
+    int savedLine = line;
+    
+    Token next = getNextToken();
+    
+    currentPos = savedPos;
+    line = savedLine;
+    
+    return next;
+}
 }
