@@ -1,0 +1,76 @@
+dream {
+    Cerebra Valid Test Program
+    This file follows the LR(1) grammar rules exactly.
+}
+
+dream { Subroutine definition }
+action pulse calculateSquare(pulse num) {
+    recall num * num;
+}
+
+dream { Void subroutine }
+action void displayMessage(thought msg) {
+    express(msg);
+}
+
+activate {
+    dream { Variable and Constant Declarations }
+    pulse x = 5, y = 10;
+    instinct pulse LIMIT = 100;
+    thought greeting = "System Initialized";
+    
+    displayMessage(greeting);
+
+    dream { Cluster (Array) Declaration: <data_type> CLUSTER ... }
+    pulse cluster sensorData[3] = {10, 20, 30};
+
+    dream { Input / Output }
+    express("Enter a value: ");
+    pulse userInput = 0;
+    sense pulse userInput;
+
+    dream { Conditional Logic }
+    stimulate (userInput < LIMIT) {
+        express("Value is within limits.");
+        x = calculateSquare(userInput);
+    } inhibit {
+        express("Value exceeds limit!");
+    }
+
+    dream { 
+        Echo Loop (For-style)
+        Rule 69 requires an <assign_stmt> in the third section, not a postfix expr.
+    }
+    echo (pulse i = 0; i < 3; i = i + 1) {
+        express("Sensor " + transcribe(i) + ": " + transcribe(sensorData[i]));
+    }
+
+    dream { Cycle Loop (While-style) }
+    pulse countdown = 3;
+    cycle (countdown > 0) {
+        express("Counting: " + transcribe(countdown));
+        countdown = countdown - 1;
+    }
+
+    dream { React-Cycle Loop (Do-While style) }
+    react {
+        express("Executing react block...");
+        y = y + 1;
+    } cycle (y < 12);
+
+    dream { Switch Statement }
+    evaluate (x) {
+        path 25:
+            express("Result is exactly twenty-five.");
+            dormant;
+        path 100:
+            express("Result is exactly one hundred.");
+            dormant;
+        base:
+            express("Result is a custom value.");
+    }
+
+    dream { Built-in Calls }
+    pulse msgLength = length(greeting);
+    express("Greeting length: " + transcribe(msgLength));
+}

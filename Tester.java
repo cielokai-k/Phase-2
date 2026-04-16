@@ -4,46 +4,23 @@ import java.io.File;
 public class Tester {
 
     public static void main(String[] args) {
-        // Put the file name here
-        String filePath = "Sample Programs" + File.separator + "test_strings_chars.txt";
+        try {
+            String csvPath = "Misc/Cerebra_Parsing_Table.csv";
+            ParseTable table = TableLoader.load(csvPath);
 
-        // Initialiaze a Symbol Table
-        SymTable symTable = new SymTable();
+            String filePath = "Sample Programs/small_parse.txt";
+            SymTable symTable = new SymTable();
+            Scanner scanner = new Scanner(new File(filePath), symTable);
 
-        // Intialize the File to be read
-        File inputFile = new File(filePath);
+            Parser parser = new Parser(scanner, table);
+            ASTNode root = parser.parse();
 
-        if (!inputFile.exists()) {
-            System.err.println("File not found: " + inputFile.getAbsolutePath());
-            return;
-        }
-
-        // Initialize the Scanner
-        Scanner scanner = new Scanner(inputFile, symTable);
-
-        Token token;
-
-        // Track the line of the last token read
-        int lastPrintedLine = -1;
-
-        do {
-            token = scanner.getNextToken();
-            if (token.type != TokenType.EOF) {
-
-                if (lastPrintedLine != -1 && token.line > lastPrintedLine) {
-                    System.out.println(); 
-                }
-
-                // Print the token
-                if (token.type == TokenType.ILLEGAL) {
-                    System.out.print("[ERROR: Line " + token.line + " | Reason: " + token.lexeme + "] ");
-                } else {
-                    // Print normal tokens
-                    System.out.print(token.displayToken() + " ");
-                }
-
-                lastPrintedLine = token.line;
+            if (root != null) {
+                System.out.println("\n--- Abstract Syntax Tree ---");
+                root.display("");
             }
-        } while (token.type != TokenType.EOF);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

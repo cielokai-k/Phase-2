@@ -1,4 +1,6 @@
+
 public class Token {
+
     public String lexeme;
     public TokenType type;
     public int line;

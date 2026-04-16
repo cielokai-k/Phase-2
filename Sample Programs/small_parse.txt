@@ -1,0 +1,9 @@
+activate {
+    evaluate (x) {
+    path 10:
+        express("Ten");
+        dormant;
+    base:
+        express("Other");
+    }
+}

@@ -1,0 +1,49 @@
+activate {
+    dream: Parsing Error Demonstration
+
+    pulse x = 5;
+    pulse y = 10;
+
+    dream {
+        ERROR 1: Missing Semicolon
+        Every statement must end with a terminator ';'.
+    }
+    express("Missing semicolon here") 
+
+    dream {
+        ERROR 2: Invalid Condition Syntax
+        'stimulate' requires parentheses around the condition.
+    }
+
+    stimulate x < y {
+        express("X is smaller");
+    }
+
+    dream: ERROR 3: Mismatched Block
+    cycle (x > 0) {
+        x--;
+    dream: Missing closing brace '}' causes a syntax error at EOF.
+
+    dream {
+        ERROR 4: Invalid Switch Syntax
+        Cerebra uses 'evaluate', 'path', and 'base'. 
+        Using C-style 'case' is a syntax error.
+    }
+
+    evaluate (x) {
+        case 5: 
+            express("Five");
+            dormant;
+    }
+
+    dream { 
+        ERROR 5: Incorrect Subroutine declaration
+        A “)” is expected during declaration but found “{”
+    }
+
+    express(printExpress());
+}
+    action pulse printExpress(  {
+    thought x = “Hello World”
+    recall x;
+}
