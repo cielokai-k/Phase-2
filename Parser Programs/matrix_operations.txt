@@ -1,0 +1,14 @@
+activate {
+    dream: Initialize two 2x2 matrices
+    pulse cluster matrixA[2][2] = {{1, 2}, {3, 4}};
+    pulse cluster matrixB[2][2] = {{5, 6}, {7, 8}};
+    pulse cluster result[2][2];
+    
+    dream: Nested echo loops for matrix addition
+    echo (pulse i = 0; i < 2; i++) {
+        echo (pulse j = 0; j < 2; j++) {
+            result[i][j] = matrixA[i][j] + matrixB[i][j];
+            express("Result at index: " + transcribe(result[i][j]));
+        }
+    }
+}

@@ -1,0 +1,20 @@
+activate {
+    dream: Testing instinct (constants) and stream (double) 
+    instinct stream PI = 3.14159;
+    stream radius = 5.0;
+    
+    dream {
+        Calculate the area of a circle.
+        Formula: PI * radius^2
+        This tests the EXPONENT token (**)
+    }
+    stream area = PI * (radius ** 2.0);
+    express("Area of the circle: " + transcribe(area));
+    
+    dream: Testing spark (float) literals with the 'f' suffix
+    spark triangleBase = 2.5f;
+    spark height = 4.0f;
+    spark triangleArea = (triangleBase * height) / 2.0f;
+    
+    express("Area of triangle: " + transcribe(triangleArea));
+}

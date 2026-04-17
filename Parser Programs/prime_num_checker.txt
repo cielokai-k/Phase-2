@@ -1,0 +1,28 @@
+action synapse isPrime(pulse num) {
+    stimulate (num <= 1) {
+        recall false;
+    }
+    
+    pulse limit = num / 2;
+    synapse primeFlag = true;
+    
+    echo (pulse i = 2; i <= limit; i++) {
+        stimulate (num % i == 0) {
+            primeFlag = false;
+            dormant; dream: Breaks out of the loop immediately
+        }
+    }
+    
+    recall primeFlag;
+}
+
+activate {
+    pulse checkVal = 29;
+    synapse result = isPrime(checkVal);
+    
+    stimulate (result == true) {
+        express(transcribe(checkVal) + " is a prime number.");
+    } inhibit {
+        express(transcribe(checkVal) + " is not a prime number.");
+    }
+}

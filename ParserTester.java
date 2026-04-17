@@ -9,7 +9,7 @@ public class ParserTester {
     public static void main(String[] args) {
 
         // TODO: Change to desired file
-        String filePath = "Parser Programs" + File.separator + "test_parser.txt";
+        String filePath = "Parser Programs" + File.separator + "invalid_syntax.txt";
 
         System.out.println("         CEREBRA PARSER TESTER");
         System.out.println("------------------------------------------");

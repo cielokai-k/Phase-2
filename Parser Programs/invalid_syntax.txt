@@ -1,0 +1,11 @@
+activate {
+    pulse invalidArray[5] = {1, 2, 3, 4, 5}; 
+    dream: ERROR - Missing 'cluster' keyword before the array declaration.
+    
+    stimulate (x == 5) 
+        express("No braces!"); 
+    dream: ERROR - Cerebra grammar strictly requires L_BRACE { and R_BRACE } for stimulate blocks.
+    
+    instinct pulse MAX; 
+    dream: ERROR - Constants (<const_init>) must be initialized with an ASSIGN.
+}

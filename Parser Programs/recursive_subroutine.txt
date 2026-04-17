@@ -1,0 +1,17 @@
+action pulse factorial(pulse n) {
+    stimulate (n <= 1) {
+        recall 1;
+    } inhibit {
+        dream: The subroutine calls itself here
+        recall n * factorial(n - 1);
+    }
+}
+
+activate {
+    pulse inputVal;
+    express("Enter a number to compute factorial: ");
+    sense pulse inputVal;
+    
+    pulse ans = factorial(inputVal);
+    express("The factorial is: " + transcribe(ans));
+}
