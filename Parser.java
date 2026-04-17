@@ -224,9 +224,14 @@ public class Parser {
         enter("ID_LIST_TAIL");
         if (check(TokenType.COMMA)) {
             advance();
-            expect(TokenType.IDENTIFIER, "Expected variable name after ','");
-            parseOptionalAssign();
-            parseIdListTail();
+            if (check(TokenType.IDENTIFIER)) {
+                expect(TokenType.IDENTIFIER, "Expected variable name after ','");
+                parseOptionalAssign();
+                parseIdListTail();
+            } else {
+                recordError("Expected variable name after ','");
+                synchronize();
+            }
         }
         exit("ID_LIST_TAIL");
     }
@@ -256,7 +261,12 @@ public class Parser {
         enter("CONST_LIST_TAIL");
         if (check(TokenType.COMMA)) {
             advance();
-            parseConstList();
+            if (check(TokenType.IDENTIFIER)) {
+                parseConstList();
+            } else {
+                recordError("Expected constant name after ','");
+                synchronize();
+            }
         }
         exit("CONST_LIST_TAIL");
     }
@@ -278,7 +288,12 @@ public class Parser {
         enter("CLUSTER_LIST_TAIL");
         if (check(TokenType.COMMA)) {
             advance();
-            parseClusterList();
+            if (check(TokenType.IDENTIFIER)) {
+                parseClusterList();
+            } else {
+                recordError("Expected array name after ','");
+                synchronize();
+            }
         }
         exit("CLUSTER_LIST_TAIL");
     }
@@ -351,7 +366,12 @@ public class Parser {
         enter("CLUSTER_1D_TAIL");
         if (check(TokenType.COMMA)) {
             advance();
-            parseCluster1DList();
+            if (isLiteral() || check(TokenType.IDENTIFIER) || check(TokenType.L_PAREN)) {
+                parseCluster1DList();
+            } else {
+                recordError("Expected expression after ','");
+                synchronize();
+            }
         }
         exit("CLUSTER_1D_TAIL");
     }
@@ -378,7 +398,12 @@ public class Parser {
         enter("CLUSTER_2D_TAIL");
         if (check(TokenType.COMMA)) {
             advance();
-            parseCluster2DList();
+            if (check(TokenType.L_BRACE)) {
+                parseCluster2DList();
+            } else {
+                recordError("Expected '{' for 2D array row after ','");
+                synchronize();
+            }
         }
         exit("CLUSTER_2D_TAIL");
     }

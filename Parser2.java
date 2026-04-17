@@ -138,7 +138,12 @@ public class Parser2 {
             parseParamItem();
             while (check(TokenType.COMMA)) {
                 advance();
-                parseParamItem();
+                if (isDataType() || check(TokenType.CLUSTER)) {
+                    parseParamItem();
+                } else {
+                    recordError("Expected parameter after ','");
+                    synchronize();
+                }
             }
         } else {
             printIndent();
@@ -207,10 +212,15 @@ public class Parser2 {
         // { COMMA IDENTIFIER [ ASSIGN <expr> ] }
         while (check(TokenType.COMMA)) {
             advance();
-            expect(TokenType.IDENTIFIER, "Expected variable name after ','");
-            if (check(TokenType.ASSIGN)) {
-                advance();
-                parseExpr();
+            if (check(TokenType.IDENTIFIER)) {
+                expect(TokenType.IDENTIFIER, "Expected variable name after ','");
+                if (check(TokenType.ASSIGN)) {
+                    advance();
+                    parseExpr();
+                }
+            } else {
+                recordError("Expected variable name after ','");
+                synchronize();
             }
         }
         exit("ID_LIST");
@@ -226,7 +236,7 @@ public class Parser2 {
         exit("CONST_DECL");
     }
 
-    // <const_list> → IDENTIFIER ASSIGN <expr> { COMMA IDENTIFIER ASSIGN <expr> }				
+    // <const_list> → IDENTIFIER ASSIGN <expr> { COMMA IDENTIFIER ASSIGN <expr> }						
     private void parseConstList() {
         enter("CONST_LIST");
         expect(TokenType.IDENTIFIER, "Expected a constant name");
@@ -235,9 +245,14 @@ public class Parser2 {
         // Additional constants (zero or more)
         while (check(TokenType.COMMA)) {
             advance(); 
-            expect(TokenType.IDENTIFIER, "Expected a constant name after ','");
-            expect(TokenType.ASSIGN, "Expected '=' for constant assignment");
-            parseExpr();
+            if (check(TokenType.IDENTIFIER)) {
+                expect(TokenType.IDENTIFIER, "Expected a constant name after ','");
+                expect(TokenType.ASSIGN, "Expected '=' for constant assignment");
+                parseExpr();
+            } else {
+                recordError("Expected constant name after ','");
+                synchronize();
+            }
         }
         exit("CONST_LIST");
     }
@@ -253,7 +268,12 @@ public class Parser2 {
         // Additional cluster items (zero or more)
         while (check(TokenType.COMMA)) {
             advance(); 
-            parseClusterItem();
+            if (check(TokenType.IDENTIFIER)) {
+                parseClusterItem();
+            } else {
+                recordError("Expected array name after ','");
+                synchronize();
+            }
         }
         exit("CLUSTER_LIST");
     }
@@ -298,7 +318,12 @@ public class Parser2 {
         // { COMMA <add_expr> }
         while (check(TokenType.COMMA)) {
             advance();
-            parseAddExpr();
+            if (isLiteral() || check(TokenType.IDENTIFIER) || check(TokenType.L_PAREN)) {
+                parseAddExpr();
+            } else {
+                recordError("Expected expression after ','");
+                synchronize();
+            }
         }
         expect(TokenType.R_BRACE, "Expected '}' to close 1D initialiser");
         exit("1D_INIT");
@@ -312,7 +337,12 @@ public class Parser2 {
         // { COMMA <1D_init> }
         while (check(TokenType.COMMA)) {
             advance();
-            parse1DInit();
+            if (check(TokenType.L_BRACE)) {
+                parse1DInit();
+            } else {
+                recordError("Expected '{' for 2D array row after ','");
+                synchronize();
+            }
         }
         expect(TokenType.R_BRACE, "Expected '}' to close 2D initialiser");
         exit("2D_INIT");
@@ -560,21 +590,35 @@ public class Parser2 {
         // { PATH <literal> COLON <statement_list> [ DORMANT SEMICOLON ] }
         while (check(TokenType.PATH)) {
             advance(); // PATH
-            parseLiteral();
-            expect(TokenType.COLON, "Expected ':' after path value");
-            parseStatementList();
+            
+            // Check if there's a literal after PATH
+            if (isLiteral()) {
+                parseLiteral();
+                expect(TokenType.COLON, "Expected ':' after path value");
+                parseStatementList();
 
-            if (check(TokenType.DORMANT)) {
-                advance();
-                expect(TokenType.SEMICOLON, "Expected ';' after 'dormant'");
+                if (check(TokenType.DORMANT)) {
+                    advance();
+                    expect(TokenType.SEMICOLON, "Expected ';' after 'dormant'");
+                }
+            } else {
+                recordError("Expected literal value after 'path'");
+                synchronize();
+                // Skip to next safe point (next PATH or BASE or })
+                while (!check(TokenType.EOF) && !check(TokenType.PATH) 
+                    && !check(TokenType.BASE) && !check(TokenType.R_BRACE)) {
+                    advance();
+                }
             }
         }
+        
         // [ BASE COLON <statement_list> ]
         if (check(TokenType.BASE)) {
             advance();
             expect(TokenType.COLON, "Expected ':' after 'base'");
             parseStatementList();
         }
+        
         expect(TokenType.R_BRACE, "Expected '}' to close evaluate block");
         exit("SWITCH_STMT");
     }
