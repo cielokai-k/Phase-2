@@ -15,7 +15,7 @@ import java.util.List;
     - Safe points are: semicolon, closing brace, any keyword that can start a new statement (like stimulate, cycle, pulse, etc.)
  */
 
-public class Parser {
+public class Parser2 {
     private final Scanner scanner;
     private Token current;              // token we are looking at NOW
     private Token previous;             // token we just consumed
@@ -23,12 +23,12 @@ public class Parser {
     private int indentLevel = 0;      
     private final List<String> errors = new ArrayList<>();
 
-    public Parser(Scanner scanner, SymTable symTable) {
+    public Parser2(Scanner scanner, SymTable symTable) {
         this.scanner = scanner;
-        advance();   
+        advance();   // load the very first real token
     }
 
-    // ------------ FOR INDENTATION -------------
+    // FOR INDENTATION
 
     private void printIndent() {
         for (int i = 0; i < indentLevel; i++) System.out.print("  ");
@@ -72,7 +72,7 @@ public class Parser {
     // ----------- SUBROUTINES -----------
 
 
-    // <subroutine_list> → <subroutine> <subroutine_list> | ε
+    // <subroutine_list> → { <subroutine> }
     private void parseSubroutineList() {
         enter("SUBROUTINE_LIST");
         while (check(TokenType.ACTION)) {
@@ -81,7 +81,7 @@ public class Parser {
         exit("SUBROUTINE_LIST");
     }
 
-     // <subroutine> → ACTION <rec_type> IDENTIFIER L_PAREN <params> R_PAREN L_BRACE <statement_list> R_BRACE
+    // <subroutine> → ACTION <rec_type> IDENTIFIER L_PAREN <params> R_PAREN L_BRACE <statement_list> R_BRACE
     private void parseSubroutine() {
         enter("SUBROUTINE");
         expect(TokenType.ACTION,     "Expected 'action'");
@@ -116,7 +116,7 @@ public class Parser {
         exit("REC_TYPE");
     }
 
-    // <array_tail> → L_BRACKET R_BRACKET | ε
+    // <array_tail> → [ L_BRACKET R_BRACKET ]				
     private void parseArrayTail() {
         enter("ARRAY_TAIL");
         if (check(TokenType.L_BRACKET)) {
@@ -130,27 +130,22 @@ public class Parser {
     // ----------- PARAMETERS -----------
 
 
-    // <params> → <param_item> <params_tail> | ε
+    // <params> → [ <param_item> { COMMA <param_item> } ]
     private void parseParams() {
         enter("PARAMS");
+
         if (isDataType() || check(TokenType.CLUSTER)) {
             parseParamItem();
-            parseParamsTail();
+            while (check(TokenType.COMMA)) {
+                advance();
+                parseParamItem();
+            }
         } else {
             printIndent();
             System.out.println("  (no parameters)");
         }
-        exit("PARAMS");
-    }
 
-    // <params_tail> → COMMA <params> | ε
-    private void parseParamsTail() {
-        enter("PARAMS_TAIL");
-        if (check(TokenType.COMMA)) {
-            advance();
-            parseParams();
-        }
-        exit("PARAMS_TAIL");
+        exit("PARAMS");
     }
 
     // <param_item> → <data_type> IDENTIFIER | CLUSTER <data_type> IDENTIFIER L_BRACKET R_BRACKET <array_tail>
@@ -200,35 +195,25 @@ public class Parser {
         exit("TYPED_DECL_TAIL");
     }
 
-    // <id_list> → IDENTIFIER <optional_assign> <id_list_tail>
+    // <id_list> → IDENTIFIER [ ASSIGN <expr> ] { COMMA IDENTIFIER [ ASSIGN <expr> ] }
     private void parseIdList() {
         enter("ID_LIST");
+        // first identifier
         expect(TokenType.IDENTIFIER, "Expected a variable name");
-        parseOptionalAssign();
-        parseIdListTail();
-        exit("ID_LIST");
-    }
-
-    // <optional_assign> → ASSIGN <expr> | ε
-    private void parseOptionalAssign() {
-        enter("OPTIONAL_ASSIGN");
         if (check(TokenType.ASSIGN)) {
             advance();
             parseExpr();
         }
-        exit("OPTIONAL_ASSIGN");
-    }
-
-    // <id_list_tail> → COMMA IDENTIFIER <optional_assign> <id_list_tail> | ε
-    private void parseIdListTail() {
-        enter("ID_LIST_TAIL");
-        if (check(TokenType.COMMA)) {
+        // { COMMA IDENTIFIER [ ASSIGN <expr> ] }
+        while (check(TokenType.COMMA)) {
             advance();
             expect(TokenType.IDENTIFIER, "Expected variable name after ','");
-            parseOptionalAssign();
-            parseIdListTail();
+            if (check(TokenType.ASSIGN)) {
+                advance();
+                parseExpr();
+            }
         }
-        exit("ID_LIST_TAIL");
+        exit("ID_LIST");
     }
 
     // <const_decl> → INSTINCT <data_type> <const_list> SEMICOLON
@@ -241,48 +226,37 @@ public class Parser {
         exit("CONST_DECL");
     }
 
-    // <const_list> → IDENTIFIER ASSIGN <expr> <const_list_tail>
+    // <const_list> → IDENTIFIER ASSIGN <expr> { COMMA IDENTIFIER ASSIGN <expr> }				
     private void parseConstList() {
         enter("CONST_LIST");
         expect(TokenType.IDENTIFIER, "Expected a constant name");
-        expect(TokenType.ASSIGN,     "Constants must be assigned — missing '='");
+        expect(TokenType.ASSIGN, "Constants must be assigned — missing '='");
         parseExpr();
-        parseConstListTail();
-        exit("CONST_LIST");
-    }
-
-    // <const_list_tail> → COMMA <const_list> | ε
-    private void parseConstListTail() {
-        enter("CONST_LIST_TAIL");
-        if (check(TokenType.COMMA)) {
-            advance();
-            parseConstList();
+        // Additional constants (zero or more)
+        while (check(TokenType.COMMA)) {
+            advance(); 
+            expect(TokenType.IDENTIFIER, "Expected a constant name after ','");
+            expect(TokenType.ASSIGN, "Expected '=' for constant assignment");
+            parseExpr();
         }
-        exit("CONST_LIST_TAIL");
+        exit("CONST_LIST");
     }
 
 
     //  ----------- ARRAY (CLUSTER) DECLARATIONS -----------
 
 
-    //  <cluster_list> → <cluster_item> <cluster_list_tail>
+    // <cluster_list> → <cluster_item> { <cluster_item> }
     private void parseClusterList() {
         enter("CLUSTER_LIST");
         parseClusterItem();
-        parseClusterListTail();
+        // Additional cluster items (zero or more)
+        while (check(TokenType.COMMA)) {
+            advance(); 
+            parseClusterItem();
+        }
         exit("CLUSTER_LIST");
     }
-
-    // <cluster_list_tail> → COMMA <cluster_list> | ε				
-    private void parseClusterListTail() {
-        enter("CLUSTER_LIST_TAIL");
-        if (check(TokenType.COMMA)) {
-            advance();
-            parseClusterList();
-        }
-        exit("CLUSTER_LIST_TAIL");
-    }
-
 
     // <cluster_item> → IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET <cluster_dim_tail>
     private void parseClusterItem() {
@@ -295,92 +269,53 @@ public class Parser {
         exit("CLUSTER_ITEM");
     }
 
-    // <cluster_dim_tail> → L_BRACKET PULSE_LIT R_BRACKET <optional_2D_assign> | <optional_1D_assign>
+    // <cluster_dim_tail> → L_BRACKET PULSE_LIT R_BRACKET [ ASSIGN <2D_init> ] | [ ASSIGN <1D_init> ]
     private void parseClusterDimTail() {
         enter("CLUSTER_DIM_TAIL");
         if (check(TokenType.L_BRACKET)) {
             advance();
             expect(TokenType.PULSE_LIT, "Second dimension must be an integer literal");
             expect(TokenType.R_BRACKET, "Expected ']' after second dimension");
-            parseOptional2DAssign();
-        } else {
-            parseOptional1DAssign();
+            // optional: ASSIGN <2D_init>
+            if (check(TokenType.ASSIGN)) {
+                advance();
+                parse2DInit();
+            }
+        } else { // optional: ASSIGN <1D_init>
+            if (check(TokenType.ASSIGN)) {
+                advance();
+                parse1DInit();
+            }
         }
         exit("CLUSTER_DIM_TAIL");
     }
 
-    // <optional_1D_assign> → ASSIGN <1D_init> | ε				
-    private void parseOptional1DAssign() {
-        enter("OPTIONAL_1D_ASSIGN");
-        if (check(TokenType.ASSIGN)) {
-            advance();
-            parse1DInit();
-        }
-        exit("OPTIONAL_1D_ASSIGN");
-    }
-
-    // <optional_2D_assign> → ASSIGN <2D_init> | ε					
-    private void parseOptional2DAssign() {
-        enter("OPTIONAL_2D_ASSIGN");
-        if (check(TokenType.ASSIGN)) {
-            advance();
-            parse2DInit();
-        }
-        exit("OPTIONAL_2D_ASSIGN");
-    }
-
-    // <1D_init> → L_BRACE <cluster_1D_list> R_BRACE
+    // <1D_init> → L_BRACE <add_expr> { COMMA <add_expr> } R_BRACE
     private void parse1DInit() {
         enter("1D_INIT");
         expect(TokenType.L_BRACE, "Expected '{' to open 1D initialiser");
-        parseCluster1DList();
+        parseAddExpr();
+        // { COMMA <add_expr> }
+        while (check(TokenType.COMMA)) {
+            advance();
+            parseAddExpr();
+        }
         expect(TokenType.R_BRACE, "Expected '}' to close 1D initialiser");
         exit("1D_INIT");
     }
 
-    // <cluster_1D_list> → <add_expr> <cluster_1D_tail>				
-    private void parseCluster1DList() {
-        enter("CLUSTER_1D_LIST");
-        parseAddExpr();
-        parseCluster1DTail();
-        exit("CLUSTER_1D_LIST");
-    }
-
-    // <cluster_1D_tail> → COMMA <cluster_1D_list> | ε				
-    private void parseCluster1DTail() {
-        enter("CLUSTER_1D_TAIL");
-        if (check(TokenType.COMMA)) {
-            advance();
-            parseCluster1DList();
-        }
-        exit("CLUSTER_1D_TAIL");
-    }
-
-    // <2D_init> → L_BRACE <cluster_2D_list> R_BRACE
+    // <2D_init> → L_BRACE <1D_init> { COMMA <1D_init> } R_BRACE
     private void parse2DInit() {
         enter("2D_INIT");
         expect(TokenType.L_BRACE, "Expected '{' to open 2D initialiser");
-        parseCluster2DList();
+        parse1DInit();
+        // { COMMA <1D_init> }
+        while (check(TokenType.COMMA)) {
+            advance();
+            parse1DInit();
+        }
         expect(TokenType.R_BRACE, "Expected '}' to close 2D initialiser");
         exit("2D_INIT");
-    }
-
-    // <cluster_2D_list> → <1D_init> <cluster_2D_tail>				
-    private void parseCluster2DList() {
-        enter("CLUSTER_2D_LIST");
-        parse1DInit();
-        parseCluster2DTail();
-        exit("CLUSTER_2D_LIST");
-    }
-
-    // <cluster_2D_tail> → COMMA <cluster_2D_list> | ε				
-    private void parseCluster2DTail() {
-        enter("CLUSTER_2D_TAIL");
-        if (check(TokenType.COMMA)) {
-            advance();
-            parseCluster2DList();
-        }
-        exit("CLUSTER_2D_TAIL");
     }
 
 
@@ -402,15 +337,12 @@ public class Parser {
     //  ----------- STATEMENTS -----------
 
 
-    // <statement_list> → <statement> <statement_list> | ε
+    // <statement_list> → { <statement> }
     private void parseStatementList() {
         enter("STATEMENT_LIST");
-        if (!check(TokenType.R_BRACE)
-            && !check(TokenType.EOF)
-            && !check(TokenType.PATH)
-            && !check(TokenType.BASE)) {
+        while (!check(TokenType.R_BRACE) && !check(TokenType.EOF)
+               && !check(TokenType.PATH)  && !check(TokenType.BASE)) {
             parseStatement();
-            parseStatementList(); 
         }
         exit("STATEMENT_LIST");
     }
@@ -501,9 +433,8 @@ public class Parser {
     //  Conditional
 
 
-     /* <conditional_stmt> → STIMULATE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE
-     *                      [ INHIBIT L_BRACE <statement_list> R_BRACE ]
-     */
+    // <conditional_stmt> → STIMULATE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE 
+    //                     [ INHIBIT L_BRACE <statement_list> R_BRACE ]
     private void parseConditionalStmt() {
         enter("CONDITIONAL_STMT");
         expect(TokenType.STIMULATE, "Expected 'stimulate'");
@@ -525,11 +456,11 @@ public class Parser {
 
     //  Loops
 
-    /* <loop_stmt> → CYCLE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE
-                    | REACT L_BRACE <statement_list> R_BRACE CYCLE L_PAREN <expr> R_PAREN SEMICOLON
-                    | ECHO L_PAREN <echo_init> SEMICOLON <expr> SEMICOLON <assign_stmt> R_PAREN L_BRACE <statement_list> R_BRACE
-    */		
-    private void parseLoopStmt() {
+    /*  <loop_stmt> → CYCLE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE
+            | REACT L_BRACE <statement_list> R_BRACE CYCLE L_PAREN <expr> R_PAREN SEMICOLON
+            | ECHO L_PAREN <echo_init> SEMICOLON <expr> SEMICOLON <echo_update> R_PAREN L_BRACE <statement_list> R_BRACE
+    */
+            private void parseLoopStmt() {
         enter("LOOP_STMT");
         if (check(TokenType.CYCLE)) {
             advance();
@@ -558,7 +489,7 @@ public class Parser {
             expect(TokenType.SEMICOLON, "Expected ';' after echo initialiser");
             parseExpr();
             expect(TokenType.SEMICOLON, "Expected ';' after echo condition");
-            parseAssignStmt();
+            parseEchoUpdate();
             expect(TokenType.R_PAREN, "Expected ')' to close echo header");
             expect(TokenType.L_BRACE, "Expected '{' to open echo body");
             parseStatementList();
@@ -567,11 +498,11 @@ public class Parser {
         exit("LOOP_STMT");
     }
 
-    // <echo_init> → <assign_stmt> | <declaration>				
+    // <echo_init> → <assign_stmt> | <echo_decl>
     private void parseEchoInit() {
         enter("ECHO_INIT");
-        if (isDataType() || check(TokenType.INSTINCT)) {
-            parseDeclaration();
+        if (isDataType()) {
+            parseEchoDecl();
         } else if (check(TokenType.IDENTIFIER)) {
             parseAssignStmt();
         } else {
@@ -581,18 +512,64 @@ public class Parser {
         exit("ECHO_INIT");
     }
 
+    // <echo_decl> → <data_type> <id_list>
+    private void parseEchoDecl() {
+        enter("ECHO_DECL");
+        parseDataType();
+        parseIdList();
+        exit("ECHO_DECL");
+    }
+
+    // <echo_update> → IDENTIFIER (INCREMENT | DECREMENT) | <assign_stmt>
+    private void parseEchoUpdate() {
+        enter("ECHO_UPDATE");
+        if (check(TokenType.IDENTIFIER)) {
+            Token next = scanner.lookaheadToken();
+            if (next != null &&
+            (next.type == TokenType.INCREMENT ||
+                next.type == TokenType.DECREMENT)) {
+                advance(); // IDENTIFIER
+                advance(); // ++ or --
+            } else {
+                parseAssignStmt();
+            }
+        } else {
+            recordError("Expected a variable name in echo update expression");
+            synchronize();
+        }
+        exit("ECHO_UPDATE");
+    }
+
+
     //  Switch
 
 
-    // <switch_stmt> → EVALUATE L_PAREN <expr> R_PAREN L_BRACE <case_list> [ BASE COLON <statement_list> ] R_BRACE				
+    /* <switch_stmt> → EVALUATE L_PAREN <expr> R_PAREN L_BRACE 
+                   { PATH <literal> COLON <statement_list> [ DORMANT SEMICOLON ] } 
+                     [ BASE COLON <statement_list> ] R_BRACE
+    */
     private void parseSwitchStmt() {
         enter("SWITCH_STMT");
+
         expect(TokenType.EVALUATE, "Expected 'evaluate'");
-        expect(TokenType.L_PAREN,  "Expected '(' after 'evaluate'");
+        expect(TokenType.L_PAREN, "Expected '(' after 'evaluate'");
         parseExpr();
-        expect(TokenType.R_PAREN,  "Expected ')' after evaluate expression");
-        expect(TokenType.L_BRACE,  "Expected '{' to open evaluate block");
-        parseCaseList();
+        expect(TokenType.R_PAREN, "Expected ')' after evaluate expression");
+        expect(TokenType.L_BRACE, "Expected '{' to open evaluate block");
+
+        // { PATH <literal> COLON <statement_list> [ DORMANT SEMICOLON ] }
+        while (check(TokenType.PATH)) {
+            advance(); // PATH
+            parseLiteral();
+            expect(TokenType.COLON, "Expected ':' after path value");
+            parseStatementList();
+
+            if (check(TokenType.DORMANT)) {
+                advance();
+                expect(TokenType.SEMICOLON, "Expected ';' after 'dormant'");
+            }
+        }
+        // [ BASE COLON <statement_list> ]
         if (check(TokenType.BASE)) {
             advance();
             expect(TokenType.COLON, "Expected ':' after 'base'");
@@ -602,41 +579,11 @@ public class Parser {
         exit("SWITCH_STMT");
     }
 
-    // <case_list> → PATH <case_value> COLON <statement_list> [ DORMANT SEMICOLON ] <case_list> | ε
-    private void parseCaseList() {
-        enter("CASE_LIST");
-        while (check(TokenType.PATH)) {
-            advance(); 
-            parseCaseValue();
-            expect(TokenType.COLON, "Expected ':' after path value");
-            parseStatementList();
-            if (check(TokenType.DORMANT)) {
-                advance();
-                expect(TokenType.SEMICOLON, "Expected ';' after 'dormant'");
-            }
-        }
-        exit("CASE_LIST");
-    }
-
-    // <case_value> → PULSE_LIT | SPARK_LIT | STREAM_LIT | THOUGHT_LIT | NEURON_LIT				
-    private void parseCaseValue() {
-        enter("CASE_VALUE");
-        if (check(TokenType.PULSE_LIT) || check(TokenType.SPARK_LIT) ||
-                check(TokenType.STREAM_LIT) || check(TokenType.THOUGHT_LIT) ||
-                check(TokenType.NEURON_LIT)) {
-            advance();
-        } else {
-            recordError("Expected a literal value for 'path' case label");
-            synchronize();
-        }
-        exit("CASE_VALUE");
-    }
-
 
     //  Assignment
 
 
-    // <assign_stmt> → <variable_access> <assign_op> <expr>				
+    // <assign_stmt> → <variable_access> <assign_op> <expr>
     private void parseAssignStmt() {
         enter("ASSIGN_STMT");
         parseVariableAccess();
@@ -645,7 +592,7 @@ public class Parser {
         exit("ASSIGN_STMT");
     }
 
-    // <assign_op> → ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN				
+    // <assign_op> → ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
     private void parseAssignOp() {
         enter("ASSIGN_OP");
         if (check(TokenType.ASSIGN)       || check(TokenType.PLUS_ASSIGN)  ||
@@ -662,179 +609,95 @@ public class Parser {
 
     //  ----------- EXPRESSIONS -----------
 
-    // <or_op> → OR
-    private void parseOrOp() {
-        enter("OR_OP");
-        expect(TokenType.OR, "Expected 'OR'");
-        exit("OR_OP");
-    }
-
-    // <xor_op> → XOR
-    private void parseXorOp() {
-        enter("XOR_OP");
-        expect(TokenType.XOR, "Expected 'XOR'");
-        exit("XOR_OP");
-    }
-
-    // <and_op> → AND
-    private void parseAndOp() {
-        enter("AND_OP");
-        expect(TokenType.AND, "Expected 'AND'");
-        exit("AND_OP");
-    }
-
-    // <releq_op> → EQUAL_TO | NOT_EQUAL
-private void parseReleqOp() {
-    enter("RELEQ_OP");
-    if (check(TokenType.EQUAL_TO)) {
-        advance();
-    } else if (check(TokenType.NOT_EQUAL)) {
-        advance();
-    } else {
-        recordError("Expected '==' or '!='");
-        synchronize();
-    }
-    exit("RELEQ_OP");
-}
-
-// <rel_op> → GREATER | LESS | GREATER_EQ | LESS_EQ
-private void parseRelOp() {
-    enter("REL_OP");
-    if (check(TokenType.GREATER) || check(TokenType.LESS) ||
-        check(TokenType.GREATER_EQ) || check(TokenType.LESS_EQ)) {
-        advance();
-    } else {
-        recordError("Expected relational operator");
-        synchronize();
-    }
-    exit("REL_OP");
-}
-
-    // <add_op> → PLUS | MINUS
-    private void parseAddOp() {
-        enter("ADD_OP");
-        if (check(TokenType.PLUS) || check(TokenType.MINUS)) {
-            advance();
-        } else {
-            recordError("Expected '+' or '-'");
-            synchronize();
-        }
-        exit("ADD_OP");
-    }
-
-    // <mul_op> → STAR | SLASH | MOD
-    private void parseMulOp() {
-        enter("MUL_OP");
-        if (check(TokenType.STAR) || check(TokenType.SLASH) || check(TokenType.MOD)) {
-            advance();
-        } else {
-            recordError("Expected '*', '/', or '%'");
-            synchronize();
-        }
-        exit("MUL_OP");
-    }
-
-    // <unary_op> → INCREMENT | DECREMENT | PLUS | MINUS | NOT
-    private void parseUnaryOp() {
-        enter("UNARY_OP");
-        if (check(TokenType.INCREMENT) || check(TokenType.DECREMENT) ||
-            check(TokenType.PLUS) || check(TokenType.MINUS) ||
-            check(TokenType.NOT)) {
-            advance();
-        } else {
-            recordError("Expected unary operator");
-            synchronize();
-        }
-        exit("UNARY_OP");
-    }
-
-    // <expr> →	<logic_or>				
+    // <expr> → <logic_or>
     private void parseExpr() {
         enter("EXPR");
         parseLogicOr();
         exit("EXPR");
     }
 
-    // <logic_or> → <logic_xor> { <or_op> <logic_xor> }				
+    // <logic_or> → <logic_xor> { OR <logic_xor> }
     private void parseLogicOr() {
         enter("LOGIC_OR");
         parseLogicXor();
         while (check(TokenType.OR)) {
-            parseOrOp();
+            advance();
             parseLogicXor();
         }
         exit("LOGIC_OR");
     }
 
-    // <logic_xor> → <logic_and> { <xor_op> <logic_and> }				
+    // <logic_xor> → <logic_and> { XOR <logic_and> }
     private void parseLogicXor() {
         enter("LOGIC_XOR");
         parseLogicAnd();
         while (check(TokenType.XOR)) {
-            parseXorOp();
+            advance();
             parseLogicAnd();
         }
         exit("LOGIC_XOR");
     }
 
-    // <logic_and> → <rel_equal> { <and_op> <rel_equal> }				
+    // <logic_and> → <rel_equal> { AND <rel_equal> }
     private void parseLogicAnd() {
         enter("LOGIC_AND");
         parseRelEqual();
         while (check(TokenType.AND)) {
-            parseAndOp();
+            advance();
             parseRelEqual();
         }
         exit("LOGIC_AND");
     }
 
-    // <rel_equal> → <rel_expr> [ <releq_op> <rel_expr> ]				
+    // <rel_equal> → <rel_expr> [ ( EQUAL_TO | NOT_EQUAL ) <rel_expr> ]
     private void parseRelEqual() {
         enter("REL_EQUAL");
         parseRelExpr();
-        if (check(TokenType.EQUAL_TO) || check(TokenType.NOT_EQUAL)) {
-            parseReleqOp();
+        if (check(TokenType.EQUAL_TO)) {
+            advance();
+            parseRelExpr();
+        } else if (check(TokenType.NOT_EQUAL)) {
+            advance();
             parseRelExpr();
         }
         exit("REL_EQUAL");
     }
 
-    // <rel_expr> → <add_expr> [ <rel_op> <add_expr> ]				
+    // <rel_expr> → <add_expr> [ ( GREATER | LESS | GREATER_EQ | LESS_EQ ) <add_expr> ]
     private void parseRelExpr() {
         enter("REL_EXPR");
         parseAddExpr();
         if (check(TokenType.GREATER) || check(TokenType.LESS) ||
             check(TokenType.GREATER_EQ) || check(TokenType.LESS_EQ)) {
-            parseRelOp();
+            advance();
             parseAddExpr();
         }
-
         exit("REL_EXPR");
     }
 
-    // <add_expr> →	<mult_expr> { <add_op> <mult_expr> }				
+    // <add_expr> → <mult_expr> { ( PLUS | MINUS ) <mult_expr> }
     private void parseAddExpr() {
         enter("ADD_EXPR");
         parseMultExpr();
         while (check(TokenType.PLUS) || check(TokenType.MINUS)) {
-            parseAddOp();
+            advance();
             parseMultExpr();
         }
         exit("ADD_EXPR");
     }
 
-    // <mult_expr> → <pow_expr> { <mul_op> <pow_expr> }				
+    // <mult_expr> → <pow_expr> { ( STAR | SLASH | MOD ) <pow_expr> }
     private void parseMultExpr() {
         enter("MULT_EXPR");
         parsePowExpr();
         while (check(TokenType.STAR) || check(TokenType.SLASH) || check(TokenType.MOD)) {
-            parseMulOp();
+            advance();
             parsePowExpr();
         }
         exit("MULT_EXPR");
     }
 
-    // <pow_expr> →	<unary_expr> [ EXPONENT <pow_expr> ]				
+    // <pow_expr> → <unary_expr> [ EXPONENT <pow_expr> ]
     private void parsePowExpr() {
         enter("POW_EXPR");
         parseUnaryExpr();
@@ -845,13 +708,13 @@ private void parseRelOp() {
         exit("POW_EXPR");
     }
 
-    // <unary_expr>	→ <unary_op> <unary_expr> | <postfix_expr>				
+    // <unary_expr> → ( INCREMENT | DECREMENT | PLUS | MINUS | NOT ) <unary_expr> | <postfix_expr>
     private void parseUnaryExpr() {
         enter("UNARY_EXPR");
-        if (check(TokenType.NOT) || check(TokenType.MINUS) ||
+        if (check(TokenType.NOT)  || check(TokenType.MINUS) ||
             check(TokenType.PLUS) || check(TokenType.INCREMENT) ||
             check(TokenType.DECREMENT)) {
-            parseUnaryOp();
+            advance();
             parseUnaryExpr();
         } else {
             parsePostfixExpr();
@@ -859,7 +722,7 @@ private void parseRelOp() {
         exit("UNARY_EXPR");
     }
 
-    // <postfix_expr> → <factor> { INCREMENT | DECREMENT }				
+    // <postfix_expr> → <factor> { INCREMENT | DECREMENT }
     private void parsePostfixExpr() {
         enter("POSTFIX_EXPR");
         parseFactor();
@@ -916,10 +779,11 @@ private void parseRelOp() {
         exit("LITERAL");
     }
 
+
     // ----------- VARIABLE ACCESS, CALLS, BUILT-INS -----------
 
 
-    // <variable_access> → IDENTIFIER { L_BRACKET <expr> R_BRACKET }				
+    // <variable_access> → IDENTIFIER { L_BRACKET <expr> R_BRACKET }
     private void parseVariableAccess() {
         enter("VARIABLE_ACCESS");
         expect(TokenType.IDENTIFIER, "Expected a variable name");
@@ -931,33 +795,11 @@ private void parseRelOp() {
         exit("VARIABLE_ACCESS");
     }
 
-    // <subroutine_call> → IDENTIFIER L_PAREN <arg_list> R_PAREN				
+    // <subroutine_call> → IDENTIFIER L_PAREN [ <expr> { COMMA <expr> } ] R_PAREN
     private void parseSubroutineCall() {
         enter("SUBROUTINE_CALL");
         expect(TokenType.IDENTIFIER, "Expected a function name");
         expect(TokenType.L_PAREN,    "Expected '(' after function name");
-        parseArgList();
-        expect(TokenType.R_PAREN,    "Expected ')' to close argument list");
-        exit("SUBROUTINE_CALL");
-    }
-
-    // <builtin_call> →	LENGTH L_PAREN <expr> R_PAREN | TRANSCRIBE L_PAREN <expr> R_PAREN				
-    private void parseBuiltinCall() {
-        enter("BUILTIN_CALL");
-        if (check(TokenType.LENGTH) || check(TokenType.TRANSCRIBE)) {
-            advance();
-        } else {
-            recordError("Expected 'length' or 'transcribe'");
-        }
-        expect(TokenType.L_PAREN, "Expected '(' after built-in name");
-        parseExpr();
-        expect(TokenType.R_PAREN, "Expected ')' to close built-in call");
-        exit("BUILTIN_CALL");
-    }
-
-    // <arg_list> →	<expr> { COMMA <expr> } | ε		
-    private void parseArgList() {
-        enter("ARG_LIST");
         if (!check(TokenType.R_PAREN)) {
             parseExpr();
             while (check(TokenType.COMMA)) {
@@ -965,8 +807,25 @@ private void parseRelOp() {
                 parseExpr();
             }
         }
-        exit("ARG_LIST");
+        expect(TokenType.R_PAREN,    "Expected ')' to close argument list");
+        exit("SUBROUTINE_CALL");
     }
+
+    // <builtin_call> → (LENGTH | TRANSCRIBE) L_PAREN <expr> R_PAREN				
+    private void parseBuiltinCall() {
+        enter("BUILTIN_CALL");
+        if (check(TokenType.LENGTH) || check(TokenType.TRANSCRIBE)) {
+            advance();
+        } else {
+            recordError("Expected 'length' or 'transcribe'");
+            synchronize();
+        }
+        expect(TokenType.L_PAREN, "Expected '(' after built-in name");
+        parseExpr();
+        expect(TokenType.R_PAREN, "Expected ')' to close built-in call");
+        exit("BUILTIN_CALL");
+    }
+
 
     // ----------- HELPERS -----------
 

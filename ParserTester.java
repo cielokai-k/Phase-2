@@ -24,7 +24,9 @@ public class ParserTester {
         }
 
         Scanner scanner = new Scanner(inputFile, symTable);
-        Parser  parser  = new Parser(scanner, symTable);
+
+        // TODO: Change class into Parser or Parser2
+        Parser2  parser  = new Parser2(scanner, symTable);
         parser.parse();
     }
 }

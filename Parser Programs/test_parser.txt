@@ -1,14 +1,168 @@
-dream: ---- function with parameters and a return value ----
-action pulse add(pulse a, pulse b) {
-    recall a++;
+dream: functions
+
+action void printSeparator() {
+    express("---");
 }
 
-dream: ---- function returning a stream ----
+action pulse add(pulse a, pulse b) {
+    recall a + b;
+}
+
 action stream average(stream x, stream y) {
     recall (x + y) / 2.0;
 }
 
-dream: ---- function with a synapse return type ----
 action synapse isEven(pulse n) {
     recall n % 2 == 0;
+}
+
+
+action void printFirst(cluster pulse arr[]) {
+    express(arr[0]);
+}
+
+activate {
+
+    pulse   count   = 0;
+    spark   pi      = 3.14f;
+    stream  ratio   = 9.81;
+    thought msg     = "hello";
+    neuron  letter  = 'A';
+    synapse flag    = true;
+
+    pulse unset;
+
+    pulse x = 1, y = 2, z;
+
+    instinct pulse MAX = 100;
+    instinct stream GRAVITY = 9.81;
+
+    pulse cluster scores[5] = {10, 20, 30, 40, 50};
+
+    pulse cluster grid[2][3] = {{1, 2, 3}, {4, 5, 6}};
+
+    stream cluster temps[7];
+
+    count = 10;
+    count += 5;
+    count -= 2;
+    count *= 3;
+    count /= 2;
+    count %= 4;
+
+    scores[0] = 99;
+    grid[1][2] = 42;
+
+    express(count + MAX);
+    express(msg + " world");
+    express("count is: " + transcribe(count));
+    express(length(msg));
+
+    sense pulse count;
+    sense thought msg;
+
+    printSeparator();
+
+    pulse total = add(x, y);
+    stream avg  = average(1.0, 2.0);
+    synapse even = isEven(count);
+
+    stimulate (count > 0) {
+        express("positive");
+    } inhibit {
+        express("non-positive");
+    }
+
+    stimulate (flag) {
+        stimulate (count == 0) {
+            express("flag true, count zero");
+        }
+    }
+
+    stimulate (x != y) {
+        express("x and y differ");
+    }
+
+    cycle (count < 10) {
+        count++;
+    }
+    dream: --- cycle with flow and dormant ---
+    pulse i = 0;
+    cycle (i < 20) {
+        i++;
+        stimulate (i == 5) {
+            flow;
+        }
+        stimulate (i == 15) {
+            dormant;
+        }
+        express(transcribe(i));
+    }
+
+    dream: --- react (do-while) ---
+    pulse retry = 0;
+    react {
+        retry++;
+        express("retrying...");
+    } cycle (retry < 3);
+
+    dream: --- echo with declaration init and ++ update ---
+    echo (pulse k = 0; k < 5; k++) {
+        express(transcribe(k));
+    }
+
+    dream: --- echo with assignment init and compound update ---
+    echo (pulse j = 0; j < 5; j += 1) {
+        express(transcribe(j));
+    }
+
+    dream: --- echo with assignment-style init (not a declaration) ---
+    pulse m = 0;
+    echo (m = 0; m < 3; m++) {
+        express("m = " + transcribe(m));
+    }
+
+    dream: --- evaluate (switch) with multiple path and a base ---
+    pulse day = 3;
+    evaluate (day) {
+        path 1:
+            express("Monday");
+            dormant;
+        path 2:
+            express("Tuesday");
+            dormant;
+        path 3:
+            express("Wednesday");
+            dormant;
+        base:
+            express("other day");
+    }
+
+    dream: --- evaluate without a base case ---
+    evaluate (day) {
+        path 1:
+            express("one");
+            dormant;
+    }
+
+    dream: --- complex expressions covering all precedence levels ---
+    synapse result = flag || even ^ flag && count > 0 == true;
+    pulse   arith  = (x + y) * count - MAX / 2 % 3;
+    pulse   power  = 2 ** 3 ** 2;
+
+    dream: --- unary operators ---
+    pulse neg  = -count;
+    synapse inv = !flag;
+    pulse pre  = ++x;
+    pulse post = y++;
+
+    dream: --- built-in calls inside expressions ---
+    pulse len   = length(msg);
+    thought num = transcribe(count);
+
+    dream: --- nested function calls ---
+    pulse sum = add(add(1, 2), add(3, 4));
+
+    dream: --- recall at the end of activate ---
+    recall 0;
 }
