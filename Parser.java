@@ -148,7 +148,12 @@ public class Parser {
         enter("PARAMS_TAIL");
         if (check(TokenType.COMMA)) {
             advance();
-            parseParams();
+            if (isDataType() || check(TokenType.CLUSTER)) {
+                parseParams();
+            } else {
+                recordError("Expected parameter after ','");
+                synchronize();
+            }
         }
         exit("PARAMS_TAIL");
     }
@@ -214,7 +219,12 @@ public class Parser {
         enter("OPTIONAL_ASSIGN");
         if (check(TokenType.ASSIGN)) {
             advance();
-            parseExpr();
+            try {
+                parseExpr();
+            } catch (Exception e) {
+                recordError("Invalid expression after '='");
+                synchronize();
+            }
         }
         exit("OPTIONAL_ASSIGN");
     }
@@ -315,9 +325,14 @@ public class Parser {
         enter("CLUSTER_DIM_TAIL");
         if (check(TokenType.L_BRACKET)) {
             advance();
-            expect(TokenType.PULSE_LIT, "Second dimension must be an integer literal");
-            expect(TokenType.R_BRACKET, "Expected ']' after second dimension");
-            parseOptional2DAssign();
+            if (check(TokenType.PULSE_LIT)) {
+                expect(TokenType.PULSE_LIT, "Second dimension must be an integer literal");
+                expect(TokenType.R_BRACKET, "Expected ']' after second dimension");
+                parseOptional2DAssign();
+            } else {
+                recordError("Expected integer literal for second dimension");
+                synchronize();
+            }
         } else {
             parseOptional1DAssign();
         }
@@ -329,7 +344,12 @@ public class Parser {
         enter("OPTIONAL_1D_ASSIGN");
         if (check(TokenType.ASSIGN)) {
             advance();
-            parse1DInit();
+            if (check(TokenType.L_BRACE)) {
+                parse1DInit();
+            } else {
+                recordError("Expected '{' for array initializer");
+                synchronize();
+            }
         }
         exit("OPTIONAL_1D_ASSIGN");
     }
@@ -339,7 +359,12 @@ public class Parser {
         enter("OPTIONAL_2D_ASSIGN");
         if (check(TokenType.ASSIGN)) {
             advance();
-            parse2DInit();
+            if (check(TokenType.L_BRACE)) {
+                parse2DInit();
+            } else {
+                recordError("Expected '{' for 2D array initializer");
+                synchronize();
+            }
         }
         exit("OPTIONAL_2D_ASSIGN");
     }
@@ -987,7 +1012,13 @@ private void parseRelOp() {
             parseExpr();
             while (check(TokenType.COMMA)) {
                 advance();
-                parseExpr();
+                if (isLiteral() || check(TokenType.IDENTIFIER) || check(TokenType.L_PAREN) ||
+                    check(TokenType.LENGTH) || check(TokenType.TRANSCRIBE)) {
+                    parseExpr();
+                } else {
+                    recordError("Expected expression after ','");
+                    synchronize();
+                }
             }
         }
         exit("ARG_LIST");
