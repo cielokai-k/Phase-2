@@ -8,7 +8,7 @@ public class Tester {
             String csvPath = "Misc/Cerebra_Parsing_Table.csv";
             ParseTable table = TableLoader.load(csvPath);
 
-            String filePath = "Sample Programs/small_parse.txt";
+            String filePath = "Sample Programs/comprehensive_parse_errors.txt";
             SymTable symTable = new SymTable();
             Scanner scanner = new Scanner(new File(filePath), symTable);
 

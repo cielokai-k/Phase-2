@@ -1,0 +1,84 @@
+activate {
+    dream: ERROR 1 - Missing Semicolon
+    pulse x = 5;
+    pulse y = 10;
+    express("Missing semicolon here")
+    
+    dream: ERROR 2 - Missing Parentheses Around Condition
+    stimulate x > 5 {
+        express("no parens");
+    }
+    
+    dream: ERROR 3 - Missing Parentheses in CYCLE
+    cycle i < 10 {
+        x--;
+    }
+    
+    dream: ERROR 4 - Missing Parentheses in EVALUATE
+    evaluate x {
+        path 1:
+            express("no parens");
+    }
+    
+    dream: ERROR 5 - Missing Parentheses in EXPRESS
+    express"hello"
+    
+    dream: ERROR 6 - Mismatched Braces
+    stimulate (x > 0) {
+        express("missing closing brace");
+    
+    dream: ERROR 7 - Missing Commas in Variable Declaration
+    pulse x spark y stream z;
+    
+    dream: ERROR 8 - Invalid Operator
+    pulse result = x +;
+    
+    dream: ERROR 9 - Invalid Case Keyword
+    evaluate (x) {
+        case 5:
+            express("wrong keyword");
+        default:
+            express("should be path/base");
+    }
+    
+    dream: ERROR 10 - Missing Assign Operator
+    pulse x 5;
+    
+    dream: ERROR 11 - Missing Parameter Name
+    action pulse test(pulse) {
+        express("missing param name");
+    }
+    
+    dream: ERROR 12 - Mismatched Parentheses
+    express((x + y);
+    
+    dream: ERROR 13 - Invalid Array Type
+    synapse x [10];
+    
+    dream: ERROR 14 - Missing Semicolon After Expression
+    pulse x = 5
+    pulse y = 10;
+    
+    dream: ERROR 15 - Function Call Wrong Syntax
+    myFunction(10 20);
+    
+    dream: ERROR 16 - Missing Data Type in Sense
+    sense x;
+    
+    dream: ERROR 17 - Invalid Constant Declaration
+    instinct pulse x 5;
+    
+    dream: ERROR 18 - Missing Closing Parenthesis
+    express("hello";
+    
+    dream: ERROR 19 - Invalid Array Assignment
+    pulse cluster arr[10] = {1,2,3};
+    
+    dream: ERROR 20 - Missing Expression
+    recall;
+    
+    dream: ERROR 21 - Echo with Missing Component
+    echo (x = 0; x++) {
+        express("missing middle");
+    }
+}
