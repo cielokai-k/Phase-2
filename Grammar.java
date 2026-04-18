@@ -84,7 +84,7 @@ public class Grammar {
         // IO & Conditionals
         add(62, "IO_STMT", 4);
         add(63, "IO_STMT", 5);
-        add(64, "CONDITIONAL_STMT", 7); // STIMULATE ( expr ) { list } opt_inhibit
+        add(64, "CONDITIONAL_STMT", 8); // STIMULATE ( expr ) { list } opt_inhibit
         add(65, "OPT_INHIBIT", 4); // INHIBIT { list }
         add(66, "OPT_INHIBIT", 0);
         add(67, "LOOP_STMT", 7);
@@ -96,7 +96,7 @@ public class Grammar {
         add(73, "CASE_LIST", 2);
         add(74, "CASE_LIST", 0);
         add(75, "CASE_ITEM", 4); // PATH value : list
-        add(76, "OPT_BASE", 3);  // BASE : list
+        add(76, "OPT_BASE", 3);
         add(77, "OPT_BASE", 0);
 
         // Case Values

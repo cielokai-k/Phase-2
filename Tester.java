@@ -12,7 +12,7 @@ public class Tester {
             String csvPath = "Misc/Cerebra_Parsing_Table.csv";
             ParseTable table = TableLoader.load(csvPath);
 
-            String filePath = "Sample Programs/small_parse.txt";
+            String filePath = "Sample Programs/comprehensive_parse_errors.txt";
             SymTable symTable = new SymTable();
             Scanner scanner = new Scanner(new File(filePath), symTable);
 
@@ -20,18 +20,20 @@ public class Tester {
             ASTNode root = parser.parse();
 
             if (root != null) {
-                System.out.println("\n--- Abstract Syntax Tree ---");
-                root.display("");
+                // COMMENTED OUT: This line was responsible for the console print
+                // root.display(""); 
 
-                // Convert to gtree format and display
+                // Convert to gtree format and display interactive window
                 Tree grtree = convertToGrtree(root);
                 new TreeScrollFrame(grtree);
 
-                // Export AST for gtree visualization
+                // Export AST to file
                 String treeContent = exportToGtreeFormat(root);
                 Files.write(Paths.get("Misc/ast_tree.txt"), treeContent.getBytes());
-                System.out.println("\n--- Tree exported to Misc/ast_tree.txt ---");
-                System.out.println("Interactive tree displayed in window above.");
+
+                // Keep these for status updates
+                System.out.println("\n[Success] Tree exported to Misc/ast_tree.txt");
+                System.out.println("[Success] Interactive tree displayed in window.");
             }
         } catch (Exception e) {
             e.printStackTrace();

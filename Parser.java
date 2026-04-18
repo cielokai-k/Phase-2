@@ -37,13 +37,13 @@ public class Parser {
 
             if (action == null) {
                 // R_BRACE often naturally ends a block - check if we should accept it
-                if (lookahead.type == TokenType.R_BRACE && !symbolStack.isEmpty()) {
-                    // Don't exit, let the parser try to reduce with what it has
-                    // Treat missing action for R_BRACE as a sign to finalize
-                    if (!errorOccurred) {
-                        return finalizeAST();
-                    }
-                }
+                //if (lookahead.type == TokenType.R_BRACE && !symbolStack.isEmpty()) {
+                // Don't exit, let the parser try to reduce with what it has
+                // Treat missing action for R_BRACE as a sign to finalize
+                //   if (!errorOccurred) {
+                //        return finalizeAST();
+                //    }
+                //}
 
                 if (lookahead.type == TokenType.EOF) {
                     return finalizeAST();
@@ -66,21 +66,35 @@ public class Parser {
                 Production prod = Grammar.getProduction(action.value);
                 NonTerminalNode newNode = new NonTerminalNode(prod.lhs);
 
+                // 1. Pop the exact number of symbols specified by the production RHS
                 for (int i = 0; i < prod.rhsLength; i++) {
-                    stateStack.pop();
+                    if (!stateStack.isEmpty()) {
+                        stateStack.pop();
+                    }
                     if (!symbolStack.isEmpty()) {
                         newNode.addChild(symbolStack.pop());
                     }
                 }
+
+                // Reverse because stack is LIFO but tree children should be left-to-right
                 newNode.reverseChildren();
+
+                // 2. Push the new non-terminal node onto the symbol stack
                 symbolStack.push(newNode);
 
-                Map<String, Integer> gotos = table.gotoTable.get(stateStack.peek());
-                Integer nextState = (gotos != null) ? gotos.get(prod.lhs.toUpperCase().replace("<", "").replace(">", "").trim()) : null;
+                // 3. Robust GOTO lookup
+                // Clean the LHS name (remove < > and whitespace) to match your CSV headers
+                // Convert to uppercase to match CSV headers like "CONDITIONAL_STMT"
+                String lhsClean = prod.lhs.replace("<", "").replace(">", "").trim().toUpperCase();
 
-                // If we can't find a next state, just continue - the parse loop will handle it
+                Map<String, Integer> gotos = table.gotoTable.get(stateStack.peek());
+                Integer nextState = (gotos != null) ? gotos.get(lhsClean) : null;
+
                 if (nextState != null) {
                     stateStack.push(nextState);
+                } else {
+                    // If this prints, there is a naming mismatch between Grammar.java and Table.csv
+                    System.err.println("[Internal Error] No GOTO found for state " + stateStack.peek() + " with " + lhsClean);
                 }
             } else if (action.type == Action.ActionType.ACCEPT) {
                 return finalizeAST();
