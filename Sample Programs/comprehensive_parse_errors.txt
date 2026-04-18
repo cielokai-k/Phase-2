@@ -27,6 +27,7 @@ activate {
     stimulate (x > 0) {
         express("missing closing brace");
     
+    
     dream: ERROR 7 - Missing Commas in Variable Declaration
     pulse x spark y stream z;
     
@@ -81,4 +82,29 @@ activate {
     echo (x = 0; x++) {
         express("missing middle");
     }
+    
+    dream: ERROR 22 - Orphaned Inhibit (Else without If)
+    inhibit {
+        express("This should fail because there is no stimulate!");
+    }
+    
+    dream: ERROR 23 - Malformed React Loop (Missing 'cycle' keyword)
+    react {
+        x++;
+    } (x < 10);
+    
+    dream: ERROR 24 - Double Operators in Math Expression
+    pulse mathError = 10 + * 5;
+    
+    dream: ERROR 25 - Empty Parentheses in Math
+    pulse emptyMath = x + ();
+    
+    dream: ERROR 26 - Missing Semicolon after React-Cycle Loop
+    react {
+        x++;
+    } cycle (x < 10)
+    
+    dream: ERROR 27 - Giving an Argument to a Standalone Keyword
+    dormant(5);
 }
+
