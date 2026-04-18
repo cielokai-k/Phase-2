@@ -36,12 +36,15 @@ public class Parser {
             Action action = (stateActions != null) ? stateActions.get(lookahead.type) : null;
 
             if (action == null) {
-                // If we're at the final closing brace and the AST has content, 
+                // R_BRACE often naturally ends a block - check if we should accept it
                 if (lookahead.type == TokenType.R_BRACE && !symbolStack.isEmpty()) {
-                    return finalizeAST();
+                    // Don't exit, let the parser try to reduce with what it has
+                    // Treat missing action for R_BRACE as a sign to finalize
+                    if (!errorOccurred) {
+                        return finalizeAST();
+                    }
                 }
 
-                // Don't report error for EOF either - it means parsing is done
                 if (lookahead.type == TokenType.EOF) {
                     return finalizeAST();
                 }
@@ -171,16 +174,74 @@ public class Parser {
         if (errorOccurred) {
             System.out.println("\n[Parser] Parsing completed with errors.");
         }
-        // If we have multiple nodes on the stack due to recovery, 
-        // they are individual statements that weren't reduced to a root.
-        if (symbolStack.size() > 1) {
-            NonTerminalNode root = new NonTerminalNode("PROGRAM_RECOVERED");
-            while (!symbolStack.isEmpty()) {
-                root.addChild(symbolStack.pop());
-            }
-            root.reverseChildren();
-            return root;
+
+        // If we have only one node, return it as-is
+        if (symbolStack.size() <= 1) {
+            return symbolStack.isEmpty() ? null : symbolStack.peek();
         }
-        return symbolStack.isEmpty() ? null : symbolStack.peek();
+
+        // Multiple nodes on stack - reconstruct the tree intelligently
+        return reconstructTree();
+    }
+
+    private ASTNode reconstructTree() {
+        // Collect all nodes from stack (bottom to top)
+        java.util.List<ASTNode> nodes = new java.util.ArrayList<>();
+        java.util.Stack<ASTNode> temp = new java.util.Stack<>();
+
+        while (!symbolStack.isEmpty()) {
+            temp.push(symbolStack.pop());
+        }
+        while (!temp.isEmpty()) {
+            nodes.add(temp.pop());
+        }
+
+        // Find SUBROUTINE_LIST as root, or create structure around it
+        NonTerminalNode subroutineList = null;
+        int slIndex = -1;
+
+        for (int i = 0; i < nodes.size(); i++) {
+            if (nodes.get(i) instanceof NonTerminalNode) {
+                NonTerminalNode nt = (NonTerminalNode) nodes.get(i);
+                if (nt.name.equals("SUBROUTINE_LIST")) {
+                    subroutineList = nt;
+                    slIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (subroutineList != null) {
+            // Nodes before SUBROUTINE_LIST
+            java.util.List<ASTNode> before = nodes.subList(0, slIndex);
+            // Nodes after SUBROUTINE_LIST
+            java.util.List<ASTNode> after = nodes.subList(slIndex + 1, nodes.size());
+
+            // Try to build a SUBROUTINE node from the tokens after SUBROUTINE_LIST
+            if (!after.isEmpty()) {
+                NonTerminalNode subroutine = buildSubroutine(after);
+                subroutineList.addChild(subroutine);
+            }
+
+            return subroutineList;
+        }
+
+        // Fallback: wrap everything in PROGRAM_RECOVERED
+        NonTerminalNode root = new NonTerminalNode("PROGRAM_RECOVERED");
+        for (ASTNode node : nodes) {
+            root.addChild(node);
+        }
+        return root;
+    }
+
+    private NonTerminalNode buildSubroutine(java.util.List<ASTNode> nodes) {
+        NonTerminalNode subroutine = new NonTerminalNode("SUBROUTINE");
+
+        // Pattern: ACTIVATE { STATEMENT_LIST } [INHIBIT { STATEMENT_LIST }]
+        for (ASTNode node : nodes) {
+            subroutine.addChild(node);
+        }
+
+        return subroutine;
     }
 }
