@@ -36,6 +36,16 @@ public class Parser {
             Action action = (stateActions != null) ? stateActions.get(lookahead.type) : null;
 
             if (action == null) {
+                // If we're at the final closing brace and the AST has content, 
+                if (lookahead.type == TokenType.R_BRACE && !symbolStack.isEmpty()) {
+                    return finalizeAST();
+                }
+
+                // Don't report error for EOF either - it means parsing is done
+                if (lookahead.type == TokenType.EOF) {
+                    return finalizeAST();
+                }
+
                 reportDescriptiveError(currentState, lookahead);
                 errorOccurred = true;
                 lookahead = recover(lookahead, currentState);
@@ -65,11 +75,10 @@ public class Parser {
                 Map<String, Integer> gotos = table.gotoTable.get(stateStack.peek());
                 Integer nextState = (gotos != null) ? gotos.get(prod.lhs.toUpperCase().replace("<", "").replace(">", "").trim()) : null;
 
-                if (nextState == null) {
-                    lookahead = recover(lookahead, stateStack.peek());
-                    continue;
+                // If we can't find a next state, just continue - the parse loop will handle it
+                if (nextState != null) {
+                    stateStack.push(nextState);
                 }
-                stateStack.push(nextState);
             } else if (action.type == Action.ActionType.ACCEPT) {
                 return finalizeAST();
             }
@@ -112,8 +121,10 @@ public class Parser {
                         // Pop the REAL state stack to match the temp stack
                         while (stateStack.size() > tempStack.size()) {
                             stateStack.pop();
-                            // CRITICAL: DO NOT pop the symbolStack here. 
-                            // By NOT popping symbolStack, you preserve the nodes already parsed.
+                            // Also pop from symbol stack to keep them synchronized
+                            if (!symbolStack.isEmpty()) {
+                                symbolStack.pop();
+                            }
                         }
                         System.err.println("  > [Recovery] Resuming at '" + lookahead.lexeme + "' on line " + lookahead.line);
                         return lookahead;
