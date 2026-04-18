@@ -1,9 +1,8 @@
 activate {
-    evaluate (x) {
-    path 10:
-        express("Ten");
-        dormant;
-    base:
-        express("Other");
+    stimulate (x > 10) {
+        y = 5;
+    }
+    inhibit {
+        y = 0;
     }
 }

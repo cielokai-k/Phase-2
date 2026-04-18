@@ -10,19 +10,20 @@ public class Parser {
     private ParseTable table;
     private Stack<Integer> stateStack = new Stack<>();
     private Stack<ASTNode> symbolStack = new Stack<>();
+    private boolean errorOccurred = false;
 
+    // Set of tokens where we can safely "restart" parsing 
     private static final Set<TokenType> SYNC_TOKENS = new HashSet<>();
 
     static {
         SYNC_TOKENS.add(TokenType.SEMICOLON);
         SYNC_TOKENS.add(TokenType.R_BRACE);
-        SYNC_TOKENS.add(TokenType.ACTION);
-        SYNC_TOKENS.add(TokenType.ACTIVATE);
         SYNC_TOKENS.add(TokenType.STIMULATE);
         SYNC_TOKENS.add(TokenType.CYCLE);
-        SYNC_TOKENS.add(TokenType.EVALUATE);
-        SYNC_TOKENS.add(TokenType.PULSE);
+        SYNC_TOKENS.add(TokenType.ACTION);
+        SYNC_TOKENS.add(TokenType.ACTIVATE);
         SYNC_TOKENS.add(TokenType.EXPRESS);
+        SYNC_TOKENS.add(TokenType.EVALUATE);
     }
 
     public Parser(Scanner scanner, ParseTable table) {
@@ -33,27 +34,18 @@ public class Parser {
     public ASTNode parse() {
         stateStack.push(0);
         Token lookahead = scanner.getNextToken();
-        boolean errorOccurred = false;
 
         while (true) {
             int currentState = stateStack.peek();
             Map<TokenType, Action> stateActions = table.actionTable.get(currentState);
             Action action = (stateActions != null) ? stateActions.get(lookahead.type) : null;
 
+            // 1. INDICATING LINE NUMBERS & 2. FIXING ERRORS (Initiate Recovery)
             if (action == null) {
-                // Explicitly indicate Parser Error with Line Number
-                System.err.println("[Parser Error] Unexpected token '" + lookahead.lexeme
-                        + "' (" + lookahead.type + ") at line " + lookahead.line);
-                errorOccurred = true;
-
-                //Reset the stack first to move out of the "broken" context
-                resetStackToStatementLevel();
-
-                // Consume at least one token and search for sync point to break the infinite loop
+                reportError(lookahead);
                 lookahead = recover(lookahead);
-
                 if (lookahead.type == TokenType.EOF) {
-                    return null;
+                    return finalizeAST();
                 }
                 continue;
             }
@@ -64,8 +56,8 @@ public class Parser {
                 lookahead = scanner.getNextToken();
             } else if (action.type == Action.ActionType.REDUCE) {
                 Production prod = Grammar.getProduction(action.value);
-
                 NonTerminalNode newNode = new NonTerminalNode(prod.lhs);
+
                 for (int i = 0; i < prod.rhsLength; i++) {
                     stateStack.pop();
                     if (!symbolStack.isEmpty()) {
@@ -78,73 +70,69 @@ public class Parser {
                 int stateAfterPop = stateStack.peek();
                 Map<String, Integer> gotos = table.gotoTable.get(stateAfterPop);
                 String lhsKey = prod.lhs.toUpperCase().replace("<", "").replace(">", "").trim();
-
                 Integer nextState = (gotos != null) ? gotos.get(lhsKey) : null;
+
+                // 3. BYPASSING GRAMMAR VARIABLES (Structural Error Recovery)
                 if (nextState == null) {
-                    // Bypass failed non-terminal reduction
-                    resetStackToStatementLevel();
-                    lookahead = scanner.getNextToken();
+                    System.err.println("[Parser Error] Structural mismatch at line " + lookahead.line + " while reducing " + prod.lhs);
+                    lookahead = recover(lookahead);
+                    if (lookahead.type == TokenType.EOF) {
+                        return finalizeAST();
+                    }
                     continue;
                 }
                 stateStack.push(nextState);
             } else if (action.type == Action.ActionType.ACCEPT) {
-                if (errorOccurred) {
-                    System.out.println("\nParsing completed with errors.");
-                }
-                return symbolStack.isEmpty() ? null : symbolStack.pop();
+                return finalizeAST();
             }
         }
     }
 
     /**
-     * Pops the stack until a state is found that can handle a fresh statement
-     * starter.
+     * Requirement: Indicating line numbers
      */
-    private void resetStackToStatementLevel() {
-        while (stateStack.size() > 1) {
-            int state = stateStack.peek();
-            if (canStartStatement(state)) {
-                break;
-            }
-            stateStack.pop();
-            if (!symbolStack.isEmpty()) {
-                symbolStack.pop();
-            }
-        }
+    private void reportError(Token lookahead) {
+        this.errorOccurred = true;
+        System.err.println("[Parser Error] Unexpected token '" + lookahead.lexeme
+                + "' (" + lookahead.type + ") at line " + lookahead.line);
     }
 
-    private boolean canStartStatement(int state) {
-        Map<TokenType, Action> actions = table.actionTable.get(state);
-        if (actions == null) {
-            return false;
+    /**
+     * Requirement: Skipping sequences of tokens in error This method advances
+     * the scanner and pops the stack to find a stable state.
+     */
+    private Token recover(Token lookahead) {
+        System.err.println("Attempting to fix error by skipping tokens until next statement...");
+
+        // Skip the current error-causing token immediately
+        if (lookahead.type != TokenType.EOF) {
+            lookahead = scanner.getNextToken();
         }
 
-        return actions.containsKey(TokenType.PULSE)
-                || actions.containsKey(TokenType.STIMULATE)
-                || actions.containsKey(TokenType.EXPRESS)
-                || actions.containsKey(TokenType.CYCLE)
-                || actions.containsKey(TokenType.ACTION)
-                || actions.containsKey(TokenType.IDENTIFIER);
+        while (lookahead.type != TokenType.EOF) {
+            // Check if current token is a synchronization point 
+            if (SYNC_TOKENS.contains(lookahead.type)) {
+                // Pop stack until we find a state that can handle this sync token
+                while (stateStack.size() > 1) {
+                    int state = stateStack.peek();
+                    if (table.actionTable.get(state).containsKey(lookahead.type)) {
+                        return lookahead; // Recovery point found
+                    }
+                    stateStack.pop();
+                    if (!symbolStack.isEmpty()) {
+                        symbolStack.pop();
+                    }
+                }
+            }
+            lookahead = scanner.getNextToken();
+        }
+        return lookahead;
     }
 
-    private Token recover(Token currentLookahead) {
-        System.out.println("Bypassing invalid sequence. Searching for next valid statement...");
-
-        // Force movement: If we hit an error, we MUST move past the current token
-        // to ensure we don't evaluate the same "Unexpected" token in the same state.
-        Token current = scanner.getNextToken();
-
-        while (current.type != TokenType.EOF) {
-            // Stop at a semicolon and consume it to start truly fresh
-            if (current.type == TokenType.SEMICOLON) {
-                return scanner.getNextToken();
-            }
-            // Stop at any major statement starters
-            if (SYNC_TOKENS.contains(current.type)) {
-                return current;
-            }
-            current = scanner.getNextToken();
+    private ASTNode finalizeAST() {
+        if (errorOccurred) {
+            System.out.println("\n[Parser] Finished with errors.");
         }
-        return current;
+        return symbolStack.isEmpty() ? null : symbolStack.peek();
     }
 }
