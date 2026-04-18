@@ -27,6 +27,25 @@ public class ParserTester {
 
         // TODO: Change class into Parser or Parser2
         Parser2  parser  = new Parser2(scanner, symTable);
-        parser.parse();
+        
+        AST.Program rootTree = parser.parse(); 
+        
+        // 2. Print the AST
+        System.out.println("\n==========================================");
+        System.out.println("          ABSTRACT SYNTAX TREE            ");
+        System.out.println("==========================================");
+        
+        ASTPrinter printer = new ASTPrinter();
+        printer.print(rootTree);
+
+        /* Commented out if visualizer code is not needed. 
+        // Generate the visualizer code
+        System.out.println("\n================================================");
+        System.out.println("GRAPHVIZ DOT EXPORT (Paste output to edotor.net)");
+        System.out.println("==============================================");
+        
+        ASTToDot dotExporter = new ASTToDot();
+        String dotCode = dotExporter.generateDot(rootTree);
+        System.out.println(dotCode); */
     }
 }

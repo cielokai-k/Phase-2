@@ -47,17 +47,17 @@ public class Parser2 {
     }
 
     // <program> → <subroutine_list> ACTIVATE L_BRACE <statement_list> R_BRACE
-    public void parse() {
+    public AST.Program parse() {
         System.out.println("\n========== STARTING PARSER ==========\n");
         enter("PROGRAM");
 
-        parseSubroutineList();
+        List<AST.Subroutine> subroutines = parseSubroutineList();
 
         printIndent();
         System.out.println("Expecting ACTIVATE...");
         expect(TokenType.ACTIVATE, "Expected 'activate' as the program entry point");
         expect(TokenType.L_BRACE,  "Expected '{' to open the activate block");
-        parseStatementList();
+        List<AST.Stmt> activateBody = parseStatementList();
         expect(TokenType.R_BRACE,  "Expected '}' to close the activate block");
 
         if (!check(TokenType.EOF)) {
@@ -66,6 +66,7 @@ public class Parser2 {
 
         exit("PROGRAM");
         printResults();
+        return new AST.Program(subroutines, activateBody);
     }
 
 
@@ -73,47 +74,62 @@ public class Parser2 {
 
 
     // <subroutine_list> → { <subroutine> }
-    private void parseSubroutineList() {
+    private List<AST.Subroutine> parseSubroutineList() {
         enter("SUBROUTINE_LIST");
+        List<AST.Subroutine> subroutines = new ArrayList<>();
+
         while (check(TokenType.ACTION)) {
-            parseSubroutine();
+            subroutines.add(parseSubroutine());
         }
+        
         exit("SUBROUTINE_LIST");
+        return subroutines;
     }
 
     // <subroutine> → ACTION <rec_type> IDENTIFIER L_PAREN <params> R_PAREN L_BRACE <statement_list> R_BRACE
-    private void parseSubroutine() {
+    private AST.Subroutine parseSubroutine() {
         enter("SUBROUTINE");
-        expect(TokenType.ACTION,     "Expected 'action'");
-        parseRecType();
+        expect(TokenType.ACTION, "Expected 'action'");
+        
+        Token returnType = parseRecType();
+        
+        Token name = current; // Capture the name before expecting it
         expect(TokenType.IDENTIFIER, "Expected function name after return type");
-        expect(TokenType.L_PAREN,    "Expected '(' after function name");
-        parseParams();
-        expect(TokenType.R_PAREN,    "Expected ')' to close parameter list");
-        expect(TokenType.L_BRACE,    "Expected '{' to open function body");
-        parseStatementList();
-        expect(TokenType.R_BRACE,    "Expected '}' to close function body");
+        
+        expect(TokenType.L_PAREN, "Expected '(' after function name");
+        List<AST.Param> params = parseParams();
+        expect(TokenType.R_PAREN, "Expected ')' to close parameter list");
+        
+        expect(TokenType.L_BRACE, "Expected '{' to open function body");
+        List<AST.Stmt> body = parseStatementList();
+        expect(TokenType.R_BRACE, "Expected '}' to close function body");
+        
         exit("SUBROUTINE");
+        return new AST.Subroutine(returnType, name, params, body);
     }
 
     // <rec_type> → <data_type> | CLUSTER <data_type> L_BRACKET R_BRACKET <array_tail> | VOID
-    private void parseRecType() {
+    private Token parseRecType() {
         enter("REC_TYPE");
+        Token typeToken = current; // Default to current token
+
         if (check(TokenType.VOID)) {
             advance();
         } else if (check(TokenType.CLUSTER)) {
             advance();
-            parseDataType();
+            typeToken = parseDataType(); // Capture the specific data type
             expect(TokenType.L_BRACKET, "Expected '[' in cluster return type");
             expect(TokenType.R_BRACKET, "Expected ']' in cluster return type");
             parseArrayTail();
         } else if (isDataType()) {
-            advance();
+            typeToken = parseDataType();
         } else {
             recordError("Expected a return type (void, data type, or cluster)");
             synchronize();
         }
+        
         exit("REC_TYPE");
+        return typeToken;
     }
 
     // <array_tail> → [ L_BRACKET R_BRACKET ]				
@@ -131,15 +147,16 @@ public class Parser2 {
 
 
     // <params> → [ <param_item> { COMMA <param_item> } ]
-    private void parseParams() {
+    private List<AST.Param> parseParams() {
         enter("PARAMS");
+        List<AST.Param> paramList = new ArrayList<>();
 
         if (isDataType() || check(TokenType.CLUSTER)) {
-            parseParamItem();
+            paramList.add(parseParamItem());
             while (check(TokenType.COMMA)) {
                 advance();
                 if (isDataType() || check(TokenType.CLUSTER)) {
-                    parseParamItem();
+                    paramList.add(parseParamItem());
                 } else {
                     recordError("Expected parameter after ','");
                     synchronize();
@@ -151,23 +168,34 @@ public class Parser2 {
         }
 
         exit("PARAMS");
+        return paramList;
     }
 
     // <param_item> → <data_type> IDENTIFIER | CLUSTER <data_type> IDENTIFIER L_BRACKET R_BRACKET <array_tail>
-    private void parseParamItem() {
+    private AST.Param parseParamItem() {
         enter("PARAM_ITEM");
+        boolean isCluster = false;
+        Token dataType;
+        Token name;
+
         if (check(TokenType.CLUSTER)) {
             advance();
-            parseDataType();
+            isCluster = true;
+            dataType = parseDataType();
+            
+            name = current; // Capture parameter name
             expect(TokenType.IDENTIFIER, "Expected parameter name in cluster parameter");
             expect(TokenType.L_BRACKET,  "Expected '[' in cluster parameter");
             expect(TokenType.R_BRACKET,  "Expected ']' in cluster parameter");
             parseArrayTail();
         } else {
-            parseDataType();
+            dataType = parseDataType();
+            name = current; // Capture parameter name
             expect(TokenType.IDENTIFIER, "Expected parameter name after data type");
         }
+        
         exit("PARAM_ITEM");
+        return new AST.Param(dataType, name, isCluster);
     }
 
     
@@ -175,86 +203,126 @@ public class Parser2 {
 
 
     // <declaration> → <data_type> <typed_decl_tail> | <const_decl>
-    private void parseDeclaration() {
+    private AST.Stmt parseDeclaration() {
         enter("DECLARATION");
+        
+        // Changed this variable type from AST.DeclarationStmt to AST.Stmt
+        AST.Stmt declNode; 
+
         if (check(TokenType.INSTINCT)) {
-            parseConstDecl();
+            declNode = parseConstDecl();
         } else {
-            parseDataType();
-            parseTypedDeclTail();
+            Token dataType = parseDataType();
+            declNode = parseTypedDeclTail(dataType); 
         }
+
         exit("DECLARATION");
+        return declNode;
     }
 
     // <typed_decl_tail> → CLUSTER <cluster_list> SEMICOLON | <id_list> SEMICOLON
-    private void parseTypedDeclTail() {
+    private AST.Stmt parseTypedDeclTail(Token dataType) {
         enter("TYPED_DECL_TAIL");
+        
         if (check(TokenType.CLUSTER)) {
             advance();
-            parseClusterList();
+            List<AST.ClusterItem> clusters = parseClusterList(); 
             expect(TokenType.SEMICOLON, "Expected ';' after cluster declaration");
+            exit("TYPED_DECL_TAIL");
+            // Return our new array node!
+            return new AST.ClusterDeclStmt(dataType, clusters);
         } else {
-            parseIdList();
+            List<AST.VariableDeclaration> vars = parseIdList();
             expect(TokenType.SEMICOLON, "Expected ';' after variable declaration");
+            exit("TYPED_DECL_TAIL");
+            return new AST.DeclarationStmt(dataType, vars, false); 
         }
-        exit("TYPED_DECL_TAIL");
     }
 
     // <id_list> → IDENTIFIER [ ASSIGN <expr> ] { COMMA IDENTIFIER [ ASSIGN <expr> ] }
-    private void parseIdList() {
+    private List<AST.VariableDeclaration> parseIdList() {
         enter("ID_LIST");
-        // first identifier
+        List<AST.VariableDeclaration> variables = new java.util.ArrayList<>();
+
+        // First identifier
+        Token name = current;
         expect(TokenType.IDENTIFIER, "Expected a variable name");
+        
+        AST.Expr initializer = null;
         if (check(TokenType.ASSIGN)) {
             advance();
-            parseExpr();
+            initializer = parseExpr();
         }
+        variables.add(new AST.VariableDeclaration(name, initializer));
+
         // { COMMA IDENTIFIER [ ASSIGN <expr> ] }
         while (check(TokenType.COMMA)) {
             advance();
             if (check(TokenType.IDENTIFIER)) {
+                name = current;
                 expect(TokenType.IDENTIFIER, "Expected variable name after ','");
+                
+                initializer = null;
                 if (check(TokenType.ASSIGN)) {
                     advance();
-                    parseExpr();
+                    initializer = parseExpr();
                 }
+                variables.add(new AST.VariableDeclaration(name, initializer));
             } else {
                 recordError("Expected variable name after ','");
                 synchronize();
             }
         }
+        
         exit("ID_LIST");
+        return variables;
     }
 
     // <const_decl> → INSTINCT <data_type> <const_list> SEMICOLON
-    private void parseConstDecl() {
+    private AST.DeclarationStmt parseConstDecl() {
         enter("CONST_DECL");
         expect(TokenType.INSTINCT, "Expected 'instinct'");
-        parseDataType();
-        parseConstList();
+        
+        Token dataType = parseDataType();
+        List<AST.VariableDeclaration> constants = parseConstList();
+        
         expect(TokenType.SEMICOLON, "Expected ';' after constant declaration");
         exit("CONST_DECL");
+        
+        // true = this is an instinct (constant)
+        return new AST.DeclarationStmt(dataType, constants, true); 
     }
 
     // <const_list> → IDENTIFIER ASSIGN <expr> { COMMA IDENTIFIER ASSIGN <expr> }						
-    private void parseConstList() {
+    private List<AST.VariableDeclaration> parseConstList() {
         enter("CONST_LIST");
+        List<AST.VariableDeclaration> constants = new java.util.ArrayList<>();
+
+        Token name = current;
         expect(TokenType.IDENTIFIER, "Expected a constant name");
         expect(TokenType.ASSIGN, "Constants must be assigned — missing '='");
-        parseExpr();
+        AST.Expr initializer = parseExpr();
+        
+        constants.add(new AST.VariableDeclaration(name, initializer));
+
         // Additional constants (zero or more)
         while (check(TokenType.COMMA)) {
             advance(); 
             if (check(TokenType.IDENTIFIER)) {
+                name = current;
                 expect(TokenType.IDENTIFIER, "Expected a constant name after ','");
                 expect(TokenType.ASSIGN, "Expected '=' for constant assignment");
-                parseExpr();
+                initializer = parseExpr();
+                
+                constants.add(new AST.VariableDeclaration(name, initializer));
             } else {
                 recordError("Expected constant name after ','");
                 synchronize();
             }
         }
+        
         exit("CONST_LIST");
+        return constants;
     }
 
 
@@ -262,31 +330,58 @@ public class Parser2 {
 
 
     // <cluster_list> → <cluster_item> { <cluster_item> }
-    private void parseClusterList() {
+    private List<AST.ClusterItem> parseClusterList() {
         enter("CLUSTER_LIST");
-        parseClusterItem();
-        // Additional cluster items (zero or more)
+        List<AST.ClusterItem> list = new java.util.ArrayList<>();
+        list.add(parseClusterItem());
+        
         while (check(TokenType.COMMA)) {
             advance(); 
             if (check(TokenType.IDENTIFIER)) {
-                parseClusterItem();
+                list.add(parseClusterItem());
             } else {
                 recordError("Expected array name after ','");
                 synchronize();
             }
         }
         exit("CLUSTER_LIST");
+        return list;
     }
 
     // <cluster_item> → IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET <cluster_dim_tail>
-    private void parseClusterItem() {
+    private AST.ClusterItem parseClusterItem() {
         enter("CLUSTER_ITEM");
+        
+        Token name = current;
         expect(TokenType.IDENTIFIER, "Expected array name");
         expect(TokenType.L_BRACKET,  "Expected '[' for array size");
+        Token size1 = current;
         expect(TokenType.PULSE_LIT,  "Array size must be an integer literal");
         expect(TokenType.R_BRACKET,  "Expected ']' after array size");
-        parseClusterDimTail();
+        
+        Token size2 = null;
+        List<AST.Expr> init1D = null;
+        List<List<AST.Expr>> init2D = null;
+
+        // Checking for a 2nd dimension or assignments
+        if (check(TokenType.L_BRACKET)) {
+            advance();
+            size2 = current;
+            expect(TokenType.PULSE_LIT, "Second dimension must be an integer literal");
+            expect(TokenType.R_BRACKET, "Expected ']' after second dimension");
+            if (check(TokenType.ASSIGN)) {
+                advance();
+                init2D = parse2DInit();
+            }
+        } else {
+            if (check(TokenType.ASSIGN)) {
+                advance();
+                init1D = parse1DInit();
+            }
+        }
+        
         exit("CLUSTER_ITEM");
+        return new AST.ClusterItem(name, size1, size2, init1D, init2D);
     }
 
     // <cluster_dim_tail> → L_BRACKET PULSE_LIT R_BRACKET [ ASSIGN <2D_init> ] | [ ASSIGN <1D_init> ]
@@ -311,49 +406,58 @@ public class Parser2 {
     }
 
     // <1D_init> → L_BRACE <add_expr> { COMMA <add_expr> } R_BRACE
-    private void parse1DInit() {
+    private List<AST.Expr> parse1DInit() {
         enter("1D_INIT");
+        List<AST.Expr> elements = new java.util.ArrayList<>();
+        
         expect(TokenType.L_BRACE, "Expected '{' to open 1D initialiser");
-        parseAddExpr();
-        // { COMMA <add_expr> }
+        elements.add(parseAddExpr()); // Use AddExpr to avoid matching logic operators in arrays
+        
         while (check(TokenType.COMMA)) {
             advance();
             if (isLiteral() || check(TokenType.IDENTIFIER) || check(TokenType.L_PAREN)) {
-                parseAddExpr();
+                elements.add(parseAddExpr());
             } else {
                 recordError("Expected expression after ','");
                 synchronize();
             }
         }
         expect(TokenType.R_BRACE, "Expected '}' to close 1D initialiser");
+        
         exit("1D_INIT");
+        return elements;
     }
 
     // <2D_init> → L_BRACE <1D_init> { COMMA <1D_init> } R_BRACE
-    private void parse2DInit() {
+    private List<List<AST.Expr>> parse2DInit() {
         enter("2D_INIT");
+        List<List<AST.Expr>> rows = new java.util.ArrayList<>();
+        
         expect(TokenType.L_BRACE, "Expected '{' to open 2D initialiser");
-        parse1DInit();
-        // { COMMA <1D_init> }
+        rows.add(parse1DInit());
+        
         while (check(TokenType.COMMA)) {
             advance();
             if (check(TokenType.L_BRACE)) {
-                parse1DInit();
+                rows.add(parse1DInit());
             } else {
                 recordError("Expected '{' for 2D array row after ','");
                 synchronize();
             }
         }
         expect(TokenType.R_BRACE, "Expected '}' to close 2D initialiser");
+        
         exit("2D_INIT");
+        return rows;
     }
 
 
     // ----------- DATA TYPE -----------
 
 
-    private void parseDataType() {
+    private Token parseDataType() {
         enter("DATA_TYPE");
+        Token typeToken = current; // Capture the token (pulse, spark, etc.)
         if (isDataType()) {
             advance();
         } else {
@@ -361,6 +465,7 @@ public class Parser2 {
             synchronize();
         }
         exit("DATA_TYPE");
+        return typeToken;
     }
 
 
@@ -368,73 +473,88 @@ public class Parser2 {
 
 
     // <statement_list> → { <statement> }
-    private void parseStatementList() {
+    private List<AST.Stmt> parseStatementList() {
         enter("STATEMENT_LIST");
+        List<AST.Stmt> statements = new ArrayList<>();
+        
         while (!check(TokenType.R_BRACE) && !check(TokenType.EOF)
                && !check(TokenType.PATH)  && !check(TokenType.BASE)) {
-            parseStatement();
+            statements.add(parseStatement());
         }
         exit("STATEMENT_LIST");
+        return statements;
     }
 
     // <statement> → (see below for all branches)
-    private void parseStatement() {
+    private AST.Stmt parseStatement() {
         enter("STATEMENT");
+        AST.Stmt stmtNode = null; // We will store the resulting node here
 
         if (check(TokenType.INSTINCT) || isDataType()) {
-            parseDeclaration();
+            stmtNode = parseDeclaration();
 
         } else if (check(TokenType.RECALL)) {
-            advance();
-            parseExpr();
+            Token keyword = advance(); // capture the recall token
+            AST.Expr returnVal = parseExpr();
             expect(TokenType.SEMICOLON, "Expected ';' after recall");
+            stmtNode = new AST.FlowControlStmt(keyword, returnVal);
 
         } else if (check(TokenType.FLOW)) {
-            advance();
+            Token keyword = advance();
             expect(TokenType.SEMICOLON, "Expected ';' after 'flow'");
+            stmtNode = new AST.FlowControlStmt(keyword, null);
 
         } else if (check(TokenType.DORMANT)) {
-            advance();
+            Token keyword = advance();
             expect(TokenType.SEMICOLON, "Expected ';' after 'dormant'");
+            stmtNode = new AST.FlowControlStmt(keyword, null);
 
         } else if (check(TokenType.STIMULATE)) {
-            parseConditionalStmt();
+            stmtNode = parseConditionalStmt();
 
         } else if (check(TokenType.CYCLE) || check(TokenType.REACT) || check(TokenType.ECHO)) {
-            parseLoopStmt();
+            stmtNode = parseLoopStmt();
 
         } else if (check(TokenType.EVALUATE)) {
-            parseSwitchStmt();
+            stmtNode = parseSwitchStmt();
 
         } else if (check(TokenType.SENSE) || check(TokenType.EXPRESS)) {
-            parseIoStmt();
+            stmtNode = parseIoStmt();
 
         } else if (check(TokenType.LENGTH) || check(TokenType.TRANSCRIBE)) {
-            parseBuiltinCall();
+            AST.Expr builtinCall = parseBuiltinCall();
             expect(TokenType.SEMICOLON, "Expected ';' after built-in call");
+            stmtNode = new AST.ExprStmt(builtinCall);
 
         } else if (check(TokenType.IDENTIFIER)) {
             Token next = scanner.lookaheadToken();
 
             if (next != null && next.type == TokenType.L_PAREN) {
-                parseSubroutineCall();
+                AST.Expr funcCall = parseSubroutineCall();
                 expect(TokenType.SEMICOLON, "Expected ';' after function call");
+                stmtNode = new AST.ExprStmt(funcCall);
             } 
             else if (next != null && (next.type == TokenType.INCREMENT || next.type == TokenType.DECREMENT)) {
-                parseVariableAccess();
-                advance(); 
+                AST.Expr varAccess = parseVariableAccess();
+                Token operator = advance(); // capture ++ or --
                 expect(TokenType.SEMICOLON, "Expected ';' after increment/decrement");
+                
+                // An increment is technically a unary expression sitting by itself as a statement
+                AST.Expr postfix = new AST.UnaryExpr(operator, varAccess, true);
+                stmtNode = new AST.ExprStmt(postfix);
             } 
             else {
                 // Assignment: x = 5;
-                parseAssignStmt();
+                stmtNode = parseAssignStmt();
                 expect(TokenType.SEMICOLON, "Expected ';' after assignment");
             }
         } else {
             recordError("Unexpected token '" + current.lexeme + "' — not a valid statement start");
             synchronize();
         }
+        
         exit("STATEMENT");
+        return stmtNode;
     }
 
 
@@ -442,45 +562,61 @@ public class Parser2 {
 
 
     // <io_stmt> → SENSE <data_type> IDENTIFIER SEMICOLON | EXPRESS L_PAREN <expr> R_PAREN SEMICOLON
-    private void parseIoStmt() {
+    private AST.IoStmt parseIoStmt() {
         enter("IO_STMT");
+        Token action = current; // Capture 'sense' or 'express'
+        AST.Expr target = null;
+
         if (check(TokenType.SENSE)) {
             advance();
-            parseDataType();
+            parseDataType(); // Consumes the data type
+            
+            Token varName = current;
             expect(TokenType.IDENTIFIER, "Expected variable name in 'sense'");
             expect(TokenType.SEMICOLON,  "Expected ';' after sense");
+            
+            // Package the identifier into a VariableAccessExpr
+            target = new AST.VariableAccessExpr(varName, new java.util.ArrayList<>());
+            
         } else if (check(TokenType.EXPRESS)) {
             advance();
             expect(TokenType.L_PAREN,   "Expected '(' after 'express'");
-            parseExpr();
+            target = parseExpr();       // Capture the expression to print
             expect(TokenType.R_PAREN,   "Expected ')' to close express");
             expect(TokenType.SEMICOLON, "Expected ';' after express");
         }
+        
         exit("IO_STMT");
+        return new AST.IoStmt(action, target);
     }
-
 
     //  Conditional
 
 
     // <conditional_stmt> → STIMULATE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE 
     //                     [ INHIBIT L_BRACE <statement_list> R_BRACE ]
-    private void parseConditionalStmt() {
+    private AST.StimulateStmt parseConditionalStmt() {
         enter("CONDITIONAL_STMT");
+        
         expect(TokenType.STIMULATE, "Expected 'stimulate'");
         expect(TokenType.L_PAREN,   "Expected '(' after 'stimulate'");
-        parseExpr();
+        AST.Expr condition = parseExpr();
         expect(TokenType.R_PAREN,   "Expected ')' after stimulate condition");
+        
         expect(TokenType.L_BRACE,   "Expected '{' to open stimulate body");
-        parseStatementList();
+        List<AST.Stmt> stimulateBody = parseStatementList();
         expect(TokenType.R_BRACE,   "Expected '}' to close stimulate body");
+        
+        List<AST.Stmt> inhibitBody = null;
         if (check(TokenType.INHIBIT)) {
             advance();
             expect(TokenType.L_BRACE, "Expected '{' after 'inhibit'");
-            parseStatementList();
+            inhibitBody = parseStatementList();
             expect(TokenType.R_BRACE, "Expected '}' to close inhibit body");
         }
+        
         exit("CONDITIONAL_STMT");
+        return new AST.StimulateStmt(condition, stimulateBody, inhibitBody);
     }
 
 
@@ -490,84 +626,105 @@ public class Parser2 {
             | REACT L_BRACE <statement_list> R_BRACE CYCLE L_PAREN <expr> R_PAREN SEMICOLON
             | ECHO L_PAREN <echo_init> SEMICOLON <expr> SEMICOLON <echo_update> R_PAREN L_BRACE <statement_list> R_BRACE
     */
-            private void parseLoopStmt() {
+    private AST.Stmt parseLoopStmt() {
         enter("LOOP_STMT");
+        AST.Stmt loopNode = null;
+
         if (check(TokenType.CYCLE)) {
             advance();
             expect(TokenType.L_PAREN,   "Expected '(' after 'cycle'");
-            parseExpr();
+            AST.Expr condition = parseExpr();
             expect(TokenType.R_PAREN,   "Expected ')' after cycle condition");
             expect(TokenType.L_BRACE,   "Expected '{' to open cycle body");
-            parseStatementList();
+            List<AST.Stmt> body = parseStatementList();
             expect(TokenType.R_BRACE,   "Expected '}' to close cycle body");
+            
+            loopNode = new AST.CycleStmt(condition, body);
 
         } else if (check(TokenType.REACT)) {
             advance();
             expect(TokenType.L_BRACE,   "Expected '{' to open react body");
-            parseStatementList();
+            List<AST.Stmt> body = parseStatementList();
             expect(TokenType.R_BRACE,   "Expected '}' to close react body");
             expect(TokenType.CYCLE,     "Expected 'cycle' after react body");
             expect(TokenType.L_PAREN,   "Expected '(' for cycle condition");
-            parseExpr();
+            AST.Expr condition = parseExpr();
             expect(TokenType.R_PAREN,   "Expected ')' after cycle condition");
             expect(TokenType.SEMICOLON, "Expected ';' after react...cycle");
+            
+            loopNode = new AST.ReactStmt(body, condition);
 
         } else if (check(TokenType.ECHO)) {
             advance();
             expect(TokenType.L_PAREN, "Expected '(' after 'echo'");
-            parseEchoInit();
+            AST.Stmt init = parseEchoInit();
             expect(TokenType.SEMICOLON, "Expected ';' after echo initialiser");
-            parseExpr();
+            AST.Expr condition = parseExpr();
             expect(TokenType.SEMICOLON, "Expected ';' after echo condition");
-            parseEchoUpdate();
+            AST.Stmt update = parseEchoUpdate();
             expect(TokenType.R_PAREN, "Expected ')' to close echo header");
             expect(TokenType.L_BRACE, "Expected '{' to open echo body");
-            parseStatementList();
+            List<AST.Stmt> body = parseStatementList();
             expect(TokenType.R_BRACE, "Expected '}' to close echo body");
+            
+            loopNode = new AST.EchoStmt(init, condition, update, body);
         }
+        
         exit("LOOP_STMT");
+        return loopNode;
     }
 
     // <echo_init> → <assign_stmt> | <echo_decl>
-    private void parseEchoInit() {
+    private AST.Stmt parseEchoInit() {
         enter("ECHO_INIT");
+        AST.Stmt initStmt = null;
+        
         if (isDataType()) {
-            parseEchoDecl();
+            initStmt = parseEchoDecl();
         } else if (check(TokenType.IDENTIFIER)) {
-            parseAssignStmt();
+            initStmt = parseAssignStmt();
         } else {
             recordError("Expected a declaration or assignment in echo initialiser");
             synchronize();
         }
+        
         exit("ECHO_INIT");
+        return initStmt;
     }
 
     // <echo_decl> → <data_type> <id_list>
-    private void parseEchoDecl() {
+    private AST.DeclarationStmt parseEchoDecl() {
         enter("ECHO_DECL");
-        parseDataType();
-        parseIdList();
+        Token dataType = parseDataType();
+        List<AST.VariableDeclaration> vars = parseIdList();
         exit("ECHO_DECL");
+        return new AST.DeclarationStmt(dataType, vars, false);
     }
 
     // <echo_update> → IDENTIFIER (INCREMENT | DECREMENT) | <assign_stmt>
-    private void parseEchoUpdate() {
+    private AST.Stmt parseEchoUpdate() {
         enter("ECHO_UPDATE");
+        AST.Stmt updateStmt = null;
+        
         if (check(TokenType.IDENTIFIER)) {
             Token next = scanner.lookaheadToken();
-            if (next != null &&
-            (next.type == TokenType.INCREMENT ||
-                next.type == TokenType.DECREMENT)) {
-                advance(); // IDENTIFIER
-                advance(); // ++ or --
+            if (next != null && (next.type == TokenType.INCREMENT || next.type == TokenType.DECREMENT)) {
+                AST.VariableAccessExpr varAccess = parseVariableAccess();
+                Token operator = advance(); // capture ++ or --
+                
+                // Wrap the x++ inside an expression statement
+                AST.Expr postfixExpr = new AST.UnaryExpr(operator, varAccess, true);
+                updateStmt = new AST.ExprStmt(postfixExpr);
             } else {
-                parseAssignStmt();
+                updateStmt = parseAssignStmt();
             }
         } else {
             recordError("Expected a variable name in echo update expression");
             synchronize();
         }
+        
         exit("ECHO_UPDATE");
+        return updateStmt;
     }
 
 
@@ -578,33 +735,38 @@ public class Parser2 {
                    { PATH <literal> COLON <statement_list> [ DORMANT SEMICOLON ] } 
                      [ BASE COLON <statement_list> ] R_BRACE
     */
-    private void parseSwitchStmt() {
+    private AST.EvaluateStmt parseSwitchStmt() {
         enter("SWITCH_STMT");
 
         expect(TokenType.EVALUATE, "Expected 'evaluate'");
         expect(TokenType.L_PAREN, "Expected '(' after 'evaluate'");
-        parseExpr();
+        AST.Expr condition = parseExpr();
         expect(TokenType.R_PAREN, "Expected ')' after evaluate expression");
         expect(TokenType.L_BRACE, "Expected '{' to open evaluate block");
 
+        List<AST.PathCase> paths = new java.util.ArrayList<>();
+
         // { PATH <literal> COLON <statement_list> [ DORMANT SEMICOLON ] }
         while (check(TokenType.PATH)) {
-            advance(); // PATH
+            advance(); // Consume PATH
             
-            // Check if there's a literal after PATH
             if (isLiteral()) {
-                parseLiteral();
+                AST.Expr literal = parseLiteral(); // Wait, we will fix parseLiteral next!
                 expect(TokenType.COLON, "Expected ':' after path value");
-                parseStatementList();
+                List<AST.Stmt> body = parseStatementList();
 
+                boolean hasDormant = false;
                 if (check(TokenType.DORMANT)) {
                     advance();
                     expect(TokenType.SEMICOLON, "Expected ';' after 'dormant'");
+                    hasDormant = true;
                 }
+                
+                paths.add(new AST.PathCase(literal, body, hasDormant));
+                
             } else {
                 recordError("Expected literal value after 'path'");
                 synchronize();
-                // Skip to next safe point (next PATH or BASE or })
                 while (!check(TokenType.EOF) && !check(TokenType.PATH) 
                     && !check(TokenType.BASE) && !check(TokenType.R_BRACE)) {
                     advance();
@@ -613,14 +775,17 @@ public class Parser2 {
         }
         
         // [ BASE COLON <statement_list> ]
+        List<AST.Stmt> baseCase = null;
         if (check(TokenType.BASE)) {
             advance();
             expect(TokenType.COLON, "Expected ':' after 'base'");
-            parseStatementList();
+            baseCase = parseStatementList();
         }
         
         expect(TokenType.R_BRACE, "Expected '}' to close evaluate block");
         exit("SWITCH_STMT");
+        
+        return new AST.EvaluateStmt(condition, paths, baseCase);
     }
 
 
@@ -628,199 +793,221 @@ public class Parser2 {
 
 
     // <assign_stmt> → <variable_access> <assign_op> <expr>
-    private void parseAssignStmt() {
+    private AST.AssignStmt parseAssignStmt() {
         enter("ASSIGN_STMT");
-        parseVariableAccess();
-        parseAssignOp();
-        parseExpr();
+        
+        AST.VariableAccessExpr target = parseVariableAccess();
+        Token operator = parseAssignOp();
+        AST.Expr value = parseExpr();
+        
         exit("ASSIGN_STMT");
+        return new AST.AssignStmt(target, operator, value);
     }
 
     // <assign_op> → ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
-    private void parseAssignOp() {
+    private Token parseAssignOp() {
         enter("ASSIGN_OP");
+        Token opToken = current; // Default to current
+        
         if (check(TokenType.ASSIGN)       || check(TokenType.PLUS_ASSIGN)  ||
             check(TokenType.MINUS_ASSIGN) || check(TokenType.MUL_ASSIGN)   ||
             check(TokenType.DIV_ASSIGN)   || check(TokenType.MOD_ASSIGN)) {
-            advance();
+            opToken = advance();
         } else {
             recordError("Expected an assignment operator (=, +=, -=, *=, /=, %=)");
             synchronize();
         }
+        
         exit("ASSIGN_OP");
+        return opToken; // Return the specific operator token
     }
 
 
     //  ----------- EXPRESSIONS -----------
 
     // <expr> → <logic_or>
-    private void parseExpr() {
+    private AST.Expr parseExpr() {
         enter("EXPR");
-        parseLogicOr();
+        AST.Expr expr = parseLogicOr();
         exit("EXPR");
+        return expr;
     }
 
     // <logic_or> → <logic_xor> { OR <logic_xor> }
-    private void parseLogicOr() {
+    private AST.Expr parseLogicOr() {
         enter("LOGIC_OR");
-        parseLogicXor();
+        AST.Expr expr = parseLogicXor();
         while (check(TokenType.OR)) {
-            advance();
-            parseLogicXor();
+            Token operator = advance();
+            AST.Expr right = parseLogicXor();
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("LOGIC_OR");
+        return expr;
     }
 
     // <logic_xor> → <logic_and> { XOR <logic_and> }
-    private void parseLogicXor() {
+    private AST.Expr parseLogicXor() {
         enter("LOGIC_XOR");
-        parseLogicAnd();
+        AST.Expr expr = parseLogicAnd();
         while (check(TokenType.XOR)) {
-            advance();
-            parseLogicAnd();
+            Token operator = advance();
+            AST.Expr right = parseLogicAnd();
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("LOGIC_XOR");
+        return expr;
     }
 
     // <logic_and> → <rel_equal> { AND <rel_equal> }
-    private void parseLogicAnd() {
+    private AST.Expr parseLogicAnd() {
         enter("LOGIC_AND");
-        parseRelEqual();
+        AST.Expr expr = parseRelEqual();
         while (check(TokenType.AND)) {
-            advance();
-            parseRelEqual();
+            Token operator = advance();
+            AST.Expr right = parseRelEqual();
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("LOGIC_AND");
+        return expr;
     }
 
     // <rel_equal> → <rel_expr> [ ( EQUAL_TO | NOT_EQUAL ) <rel_expr> ]
-    private void parseRelEqual() {
+    private AST.Expr parseRelEqual() {
         enter("REL_EQUAL");
-        parseRelExpr();
-        if (check(TokenType.EQUAL_TO)) {
-            advance();
-            parseRelExpr();
-        } else if (check(TokenType.NOT_EQUAL)) {
-            advance();
-            parseRelExpr();
+        AST.Expr expr = parseRelExpr();
+        if (check(TokenType.EQUAL_TO) || check(TokenType.NOT_EQUAL)) {
+            Token operator = advance();
+            AST.Expr right = parseRelExpr();
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("REL_EQUAL");
+        return expr;
     }
 
     // <rel_expr> → <add_expr> [ ( GREATER | LESS | GREATER_EQ | LESS_EQ ) <add_expr> ]
-    private void parseRelExpr() {
+    private AST.Expr parseRelExpr() {
         enter("REL_EXPR");
-        parseAddExpr();
+        AST.Expr expr = parseAddExpr();
         if (check(TokenType.GREATER) || check(TokenType.LESS) ||
             check(TokenType.GREATER_EQ) || check(TokenType.LESS_EQ)) {
-            advance();
-            parseAddExpr();
+            Token operator = advance();
+            AST.Expr right = parseAddExpr();
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("REL_EXPR");
+        return expr;
     }
 
     // <add_expr> → <mult_expr> { ( PLUS | MINUS ) <mult_expr> }
-    private void parseAddExpr() {
+    private AST.Expr parseAddExpr() {
         enter("ADD_EXPR");
-        parseMultExpr();
+        AST.Expr expr = parseMultExpr();
         while (check(TokenType.PLUS) || check(TokenType.MINUS)) {
-            advance();
-            parseMultExpr();
+            Token operator = advance();
+            AST.Expr right = parseMultExpr();
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("ADD_EXPR");
+        return expr;
     }
 
     // <mult_expr> → <pow_expr> { ( STAR | SLASH | MOD ) <pow_expr> }
-    private void parseMultExpr() {
+    private AST.Expr parseMultExpr() {
         enter("MULT_EXPR");
-        parsePowExpr();
+        AST.Expr expr = parsePowExpr();
         while (check(TokenType.STAR) || check(TokenType.SLASH) || check(TokenType.MOD)) {
-            advance();
-            parsePowExpr();
+            Token operator = advance();
+            AST.Expr right = parsePowExpr();
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("MULT_EXPR");
+        return expr;
     }
 
     // <pow_expr> → <unary_expr> [ EXPONENT <pow_expr> ]
-    private void parsePowExpr() {
+    private AST.Expr parsePowExpr() {
         enter("POW_EXPR");
-        parseUnaryExpr();
+        AST.Expr expr = parseUnaryExpr();
         if (check(TokenType.EXPONENT)) {
-            advance();
-            parsePowExpr();
+            Token operator = advance();
+            AST.Expr right = parsePowExpr(); // Recursively call powExpr for right-associativity
+            expr = new AST.BinaryExpr(expr, operator, right);
         }
         exit("POW_EXPR");
+        return expr;
     }
 
     // <unary_expr> → ( INCREMENT | DECREMENT | PLUS | MINUS | NOT ) <unary_expr> | <postfix_expr>
-    private void parseUnaryExpr() {
+    private AST.Expr parseUnaryExpr() {
         enter("UNARY_EXPR");
+        AST.Expr expr;
         if (check(TokenType.NOT)  || check(TokenType.MINUS) ||
             check(TokenType.PLUS) || check(TokenType.INCREMENT) ||
             check(TokenType.DECREMENT)) {
-            advance();
-            parseUnaryExpr();
+            Token operator = advance();
+            AST.Expr operand = parseUnaryExpr();
+            expr = new AST.UnaryExpr(operator, operand, false); // false = prefix
         } else {
-            parsePostfixExpr();
+            expr = parsePostfixExpr();
         }
         exit("UNARY_EXPR");
+        return expr;
     }
 
     // <postfix_expr> → <factor> { INCREMENT | DECREMENT }
-    private void parsePostfixExpr() {
+    private AST.Expr parsePostfixExpr() {
         enter("POSTFIX_EXPR");
-        parseFactor();
+        AST.Expr expr = parseFactor();
         while (check(TokenType.INCREMENT) || check(TokenType.DECREMENT)) {
-            advance();
+            Token operator = advance();
+            expr = new AST.UnaryExpr(operator, expr, true); // true = postfix
         }
         exit("POSTFIX_EXPR");
+        return expr;
     }
 
     // <factor>	→ <variable_access> | <literal> | L_PAREN <expr> R_PAREN | <subroutine_call> | <builtin_call>		
-    private void parseFactor() {
+    private AST.Expr parseFactor() {
         enter("FACTOR");
+        AST.Expr expr = null;
 
         if (check(TokenType.LENGTH) || check(TokenType.TRANSCRIBE)) {
-            parseBuiltinCall();
+            expr = parseBuiltinCall();
         } else if (check(TokenType.IDENTIFIER)) {
             Token next = scanner.lookaheadToken();
             if (next != null && next.type == TokenType.L_PAREN) {
-                parseSubroutineCall();
+                expr = parseSubroutineCall();
             } else {
-                parseVariableAccess();
+                expr = parseVariableAccess();
             }
         } else if (isLiteral()) {
-            parseLiteral();
+            expr = parseLiteral();
         } else if (check(TokenType.L_PAREN)) {
             advance();
-            parseExpr();
+            expr = parseExpr();
             expect(TokenType.R_PAREN, "Expected ')' to close grouped expression");
         } else {
             recordError("Expected an expression value but found '" + current.lexeme + "'");
             synchronize();
         }
+        
         exit("FACTOR");
+        return expr;
     }
 
     // <literal> → PULSE_LIT | SPARK_LIT | STREAM_LIT | THOUGHT_LIT | NEURON_LIT | TRUE | FALSE
-    private void parseLiteral() {
+    private AST.LiteralExpr parseLiteral() {
         enter("LITERAL");
-
-        if (check(TokenType.PULSE_LIT) ||
-            check(TokenType.SPARK_LIT) ||
-            check(TokenType.STREAM_LIT) ||
-            check(TokenType.THOUGHT_LIT) ||
-            check(TokenType.NEURON_LIT) ||
-            check(TokenType.TRUE) ||
-            check(TokenType.FALSE)) {
-
+        Token value = current;
+        if (isLiteral()) {
             advance();
         } else {
             recordError("Expected a literal");
             synchronize();
         }
-
         exit("LITERAL");
+        return new AST.LiteralExpr(value);
     }
 
 
@@ -828,36 +1015,48 @@ public class Parser2 {
 
 
     // <variable_access> → IDENTIFIER { L_BRACKET <expr> R_BRACKET }
-    private void parseVariableAccess() {
+    private AST.VariableAccessExpr parseVariableAccess() {
         enter("VARIABLE_ACCESS");
+        
+        Token name = current; 
         expect(TokenType.IDENTIFIER, "Expected a variable name");
+        
+        List<AST.Expr> indices = new java.util.ArrayList<>();
+        
         while (check(TokenType.L_BRACKET)) {
             advance();
-            parseExpr();
+            indices.add(parseExpr()); // Capture the index expression (e.g., the 'i' in arr[i])
             expect(TokenType.R_BRACKET, "Expected ']' to close array index");
         }
+        
         exit("VARIABLE_ACCESS");
+        return new AST.VariableAccessExpr(name, indices);
     }
 
     // <subroutine_call> → IDENTIFIER L_PAREN [ <expr> { COMMA <expr> } ] R_PAREN
-    private void parseSubroutineCall() {
+    private AST.CallExpr parseSubroutineCall() {
         enter("SUBROUTINE_CALL");
+        Token callee = current;
         expect(TokenType.IDENTIFIER, "Expected a function name");
         expect(TokenType.L_PAREN,    "Expected '(' after function name");
+        
+        java.util.List<AST.Expr> arguments = new java.util.ArrayList<>();
         if (!check(TokenType.R_PAREN)) {
-            parseExpr();
+            arguments.add(parseExpr());
             while (check(TokenType.COMMA)) {
                 advance();
-                parseExpr();
+                arguments.add(parseExpr());
             }
         }
         expect(TokenType.R_PAREN,    "Expected ')' to close argument list");
         exit("SUBROUTINE_CALL");
+        return new AST.CallExpr(callee, arguments);
     }
 
     // <builtin_call> → (LENGTH | TRANSCRIBE) L_PAREN <expr> R_PAREN				
-    private void parseBuiltinCall() {
+    private AST.CallExpr parseBuiltinCall() {
         enter("BUILTIN_CALL");
+        Token callee = current;
         if (check(TokenType.LENGTH) || check(TokenType.TRANSCRIBE)) {
             advance();
         } else {
@@ -865,9 +1064,13 @@ public class Parser2 {
             synchronize();
         }
         expect(TokenType.L_PAREN, "Expected '(' after built-in name");
-        parseExpr();
+        
+        java.util.List<AST.Expr> arguments = new java.util.ArrayList<>();
+        arguments.add(parseExpr()); // Pass the argument in
+        
         expect(TokenType.R_PAREN, "Expected ')' to close built-in call");
         exit("BUILTIN_CALL");
+        return new AST.CallExpr(callee, arguments);
     }
 
 
