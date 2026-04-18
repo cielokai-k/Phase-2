@@ -1,4 +1,6 @@
 
+import grtree.Tree;
+import grtree.TreeScrollFrame;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -10,7 +12,7 @@ public class Tester {
             String csvPath = "Misc/Cerebra_Parsing_Table.csv";
             ParseTable table = TableLoader.load(csvPath);
 
-            String filePath = "Sample Programs/comprehensive_parse_errors.txt";
+            String filePath = "Sample Programs/small_parse.txt";
             SymTable symTable = new SymTable();
             Scanner scanner = new Scanner(new File(filePath), symTable);
 
@@ -21,15 +23,34 @@ public class Tester {
                 System.out.println("\n--- Abstract Syntax Tree ---");
                 root.display("");
 
+                // Convert to gtree format and display
+                Tree grtree = convertToGrtree(root);
+                new TreeScrollFrame(grtree);
+
                 // Export AST for gtree visualization
                 String treeContent = exportToGtreeFormat(root);
                 Files.write(Paths.get("Misc/ast_tree.txt"), treeContent.getBytes());
                 System.out.println("\n--- Tree exported to Misc/ast_tree.txt ---");
-                System.out.println("Run: gtree Misc/ast_tree.txt");
+                System.out.println("Interactive tree displayed in window above.");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static Tree convertToGrtree(ASTNode node) {
+        if (node instanceof NonTerminalNode) {
+            NonTerminalNode ntNode = (NonTerminalNode) node;
+            Tree tree = new Tree("[" + ntNode.name + "]");
+            for (ASTNode child : ntNode.children) {
+                tree.addChild(convertToGrtree(child));
+            }
+            return tree;
+        } else if (node instanceof TerminalNode) {
+            TerminalNode tNode = (TerminalNode) node;
+            return new Tree("Terminal: " + tNode.token.displayToken());
+        }
+        return new Tree("NULL");
     }
 
     private static String exportToGtreeFormat(ASTNode node) {
