@@ -28,7 +28,7 @@ activate {
         express("missing closing brace");
     
     
-    dream: ERROR 7 - Missing Commas in Variable Declaration
+    dream: ERROR 7 - Missing Semicolon in Variable Declaration
     pulse x spark y stream z;
     
     dream: ERROR 8 - Invalid Operator
