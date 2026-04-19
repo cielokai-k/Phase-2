@@ -73,15 +73,24 @@ public class Parser {
                 logWriter.println(String.format("%-15s | %-20s | %s", "REDUCE " + action.value, prod.lhs, stackStr));
 
                 NonTerminalNode newNode = new NonTerminalNode(prod.lhs);
-                for (int i = 0; i < prod.rhsLength; i++) {
-                    if (!stateStack.isEmpty()) {
-                        stateStack.pop();
+
+                // If the production is Epsilon (RHS length is 0)
+                if (prod.rhsLength == 0) {
+
+                    newNode.addChild(new TerminalNode(new Token(TokenType.EPSILON, "ε", 0)));
+                } else {
+                    // Standard reduction logic
+                    for (int i = 0; i < prod.rhsLength; i++) {
+                        if (!stateStack.isEmpty()) {
+                            stateStack.pop();
+                        }
+                        if (!symbolStack.isEmpty()) {
+                            newNode.addChild(symbolStack.pop());
+                        }
                     }
-                    if (!symbolStack.isEmpty()) {
-                        newNode.addChild(symbolStack.pop());
-                    }
+                    newNode.reverseChildren();
                 }
-                newNode.reverseChildren();
+
                 symbolStack.push(newNode);
 
                 String lhsClean = prod.lhs.replace("<", "").replace(">", "").trim().toUpperCase();
