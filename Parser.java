@@ -1,4 +1,5 @@
 
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -9,6 +10,7 @@ public class Parser {
     private Stack<Integer> stateStack = new Stack<>();
     private Stack<ASTNode> symbolStack = new Stack<>();
     private boolean errorOccurred = false;
+    private PrintWriter logWriter;
 
     private static final Set<TokenType> STATEMENT_STARTERS = new HashSet<>();
 
@@ -21,24 +23,34 @@ public class Parser {
         ));
     }
 
-    public Parser(Scanner scanner, ParseTable table) {
+    public Parser(Scanner scanner, ParseTable table, PrintWriter logWriter) {
         this.scanner = scanner;
         this.table = table;
+        this.logWriter = logWriter;
     }
 
     public ASTNode parse() {
         stateStack.push(0);
         Token lookahead = scanner.getNextToken();
 
+        // Print header to the file
+        logWriter.println(String.format("%-15s | %-20s | %-15s", "ACTION", "TOKEN/LHS", "STATE STACK"));
+        logWriter.println("--------------------------------------------------------------------------------");
+
         while (true) {
             int currentState = stateStack.peek();
             Map<TokenType, Action> stateActions = table.actionTable.get(currentState);
             Action action = (stateActions != null) ? stateActions.get(lookahead.type) : null;
 
+            String stackStr = stateStack.toString();
+
             if (action == null) {
                 if (lookahead.type == TokenType.EOF) {
                     return finalizeAST();
                 }
+
+                // Log error to file as well
+                logWriter.println("[ERROR] Unexpected " + lookahead.lexeme + " at line " + lookahead.line);
 
                 reportDescriptiveError(currentState, lookahead);
                 errorOccurred = true;
@@ -51,13 +63,16 @@ public class Parser {
             }
 
             if (action.type == Action.ActionType.SHIFT) {
+                logWriter.println(String.format("%-15s | %-20s | %s", "SHIFT " + action.value, lookahead.lexeme, stackStr));
                 stateStack.push(action.value);
                 symbolStack.push(new TerminalNode(lookahead));
                 lookahead = scanner.getNextToken();
+
             } else if (action.type == Action.ActionType.REDUCE) {
                 Production prod = Grammar.getProduction(action.value);
-                NonTerminalNode newNode = new NonTerminalNode(prod.lhs);
+                logWriter.println(String.format("%-15s | %-20s | %s", "REDUCE " + action.value, prod.lhs, stackStr));
 
+                NonTerminalNode newNode = new NonTerminalNode(prod.lhs);
                 for (int i = 0; i < prod.rhsLength; i++) {
                     if (!stateStack.isEmpty()) {
                         stateStack.pop();
@@ -66,7 +81,6 @@ public class Parser {
                         newNode.addChild(symbolStack.pop());
                     }
                 }
-
                 newNode.reverseChildren();
                 symbolStack.push(newNode);
 
@@ -75,11 +89,11 @@ public class Parser {
                 Integer nextState = (gotos != null) ? gotos.get(lhsClean) : null;
 
                 if (nextState != null) {
+                    logWriter.println(String.format("%-15s | %-20s | %s", "GOTO " + nextState, lhsClean, stateStack.toString()));
                     stateStack.push(nextState);
-                } else {
-                    System.err.println("[Internal Error] No GOTO found for state " + stateStack.peek() + " with " + lhsClean);
                 }
             } else if (action.type == Action.ActionType.ACCEPT) {
+                logWriter.println(String.format("%-15s | %-20s | %s", "ACCEPT", "---", stackStr));
                 return finalizeAST();
             }
         }

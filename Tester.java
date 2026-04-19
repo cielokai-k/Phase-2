@@ -2,39 +2,54 @@
 import grtree.Tree;
 import grtree.TreeScrollFrame;
 import java.io.File;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class Tester {
 
     public static void main(String[] args) {
-        try {
-            String csvPath = "Misc/LR1_Parsing_Table.csv";
+        // Define paths
+        String logPath = "Misc/parser_log.txt";
+        String astPath = "Misc/ast_tree.txt";
+        String csvPath = "Misc/LR1_Parsing_Table.csv";
+        String inputPath = "Sample Programs/small_parse.txt";
+
+        try (PrintWriter logWriter = new PrintWriter(new File(logPath))) {
             ParseTable table = TableLoader.load(csvPath);
-
-            String filePath = "Sample Programs/error_free.txt";
             SymTable symTable = new SymTable();
-            Scanner scanner = new Scanner(new File(filePath), symTable);
 
-            Parser parser = new Parser(scanner, table);
+            // Step 1: Scanner Token Printout (Requirement 1.2)
+            logWriter.println("=== SCANNER TOKEN STREAM ===");
+            Scanner scannerForTokens = new Scanner(new File(inputPath), symTable);
+            Token t;
+            while ((t = scannerForTokens.getNextToken()).type != TokenType.EOF) {
+                logWriter.println(t.displayToken());
+            }
+            logWriter.println("============================\n");
+
+            // Step 2: Parser Actions
+            logWriter.println("=== PARSER ACTION LOG ===");
+            Scanner scannerForParsing = new Scanner(new File(inputPath), symTable);
+
+            // Pass the logWriter to the Parser
+            Parser parser = new Parser(scannerForParsing, table, logWriter);
             ASTNode root = parser.parse();
 
             if (root != null) {
-                // COMMENTED OUT: This line was responsible for the console print
-                // root.display(""); 
+                // UI Window
+                new TreeScrollFrame(convertToGrtree(root));
 
-                // Convert to gtree format and display interactive window
-                Tree grtree = convertToGrtree(root);
-                new TreeScrollFrame(grtree);
-
-                // Export AST to file
+                // Export final AST Structure
                 String treeContent = exportToGtreeFormat(root);
-                Files.write(Paths.get("Misc/ast_tree.txt"), treeContent.getBytes());
+                Files.write(Paths.get(astPath), treeContent.getBytes());
 
-                // Keep these for status updates
-                System.out.println("\n[Success] Tree exported to Misc/ast_tree.txt");
-                System.out.println("[Success] Interactive tree displayed in window.");
+                System.out.println("[Success] Parsing complete.");
+                System.out.println("[Success] Action Log: " + logPath);
+                System.out.println("[Success] AST Tree: " + astPath);
             }
+
+            logWriter.flush(); // Ensure everything is written
         } catch (Exception e) {
             e.printStackTrace();
         }
