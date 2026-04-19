@@ -9,7 +9,7 @@ public class Tester {
 
     public static void main(String[] args) {
         try {
-            String csvPath = "Misc/Cerebra_Parsing_Table.csv";
+            String csvPath = "Misc/LR1_Parsing_Table.csv";
             ParseTable table = TableLoader.load(csvPath);
 
             String filePath = "Sample Programs/small_parse.txt";

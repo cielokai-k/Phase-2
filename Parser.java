@@ -251,7 +251,6 @@ public class Parser {
     private NonTerminalNode buildSubroutine(java.util.List<ASTNode> nodes) {
         NonTerminalNode subroutine = new NonTerminalNode("SUBROUTINE");
 
-        // Pattern: ACTIVATE { STATEMENT_LIST } [INHIBIT { STATEMENT_LIST }]
         for (ASTNode node : nodes) {
             subroutine.addChild(node);
         }
