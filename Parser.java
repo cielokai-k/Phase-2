@@ -94,6 +94,17 @@ public class Parser {
                 }
             } else if (action.type == Action.ActionType.ACCEPT) {
                 logWriter.println(String.format("%-15s | %-20s | %s", "ACCEPT", "---", stackStr));
+
+                // If we are accepting, the symbolStack should contain the completed <program>
+                if (!symbolStack.isEmpty()) {
+                    ASTNode finalProgram = symbolStack.pop();
+
+                    // Augmented Node not part of CSV
+                    NonTerminalNode augmentedRoot = new NonTerminalNode("<PROGRAM'>");
+                    augmentedRoot.addChild(finalProgram);
+                    symbolStack.push(augmentedRoot);
+                }
+
                 return finalizeAST();
             }
         }
@@ -164,7 +175,6 @@ public class Parser {
         }
 
         // A state is a "List State" if it can handle several different statement starters
-        // (This is typical for the inside of a block or the top level of a program)
         long starterCount = STATEMENT_STARTERS.stream()
                 .filter(actions::containsKey)
                 .count();
@@ -213,15 +223,19 @@ public class Parser {
         if (errorOccurred) {
             System.out.println("\n[Parser] Parsing completed with errors.");
         }
-        if (symbolStack.size() <= 1) {
-            return symbolStack.isEmpty() ? null : symbolStack.peek();
+
+        if (symbolStack.size() == 1) {
+            return symbolStack.peek();
         }
+
+        // If error recovery left multiple nodes, build the recovery root
         return reconstructTree();
     }
 
     private ASTNode reconstructTree() {
         java.util.List<ASTNode> nodes = new java.util.ArrayList<>();
         java.util.Stack<ASTNode> temp = new java.util.Stack<>();
+
         while (!symbolStack.isEmpty()) {
             temp.push(symbolStack.pop());
         }
@@ -231,28 +245,25 @@ public class Parser {
 
         NonTerminalNode root = null;
         for (ASTNode node : nodes) {
-            if (node instanceof NonTerminalNode && ((NonTerminalNode) node).name.contains("LIST")) {
-                root = (NonTerminalNode) node;
-                break;
+            if (node instanceof NonTerminalNode) {
+                String name = ((NonTerminalNode) node).name;
+                if (name.equals("<PROGRAM'>") || name.equals("<PROGRAM>")) {
+                    root = (NonTerminalNode) node;
+                    break;
+                }
             }
         }
 
         if (root == null) {
-            root = new NonTerminalNode("PROGRAM_RECOVERED");
+            root = new NonTerminalNode("<PROGRAM_RECOVERED>");
         }
+
+        // Attach orphans
         for (ASTNode node : nodes) {
             if (node != root) {
                 root.addChild(node);
             }
         }
         return root;
-    }
-
-    private NonTerminalNode buildSubroutine(java.util.List<ASTNode> nodes) {
-        NonTerminalNode subroutine = new NonTerminalNode("SUBROUTINE");
-        for (ASTNode node : nodes) {
-            subroutine.addChild(node);
-        }
-        return subroutine;
     }
 }
