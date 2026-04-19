@@ -1,153 +1,153 @@
-RULE #,LR(1) GRAMMAR,,,
-0,<program'>,→,<program>,
-1,<program>,→,<subroutine_list> ACTIVATE L_BRACE <statement_list> R_BRACE,
-2,<subroutine_list>,→,<subroutine_list> <subroutine>,
-3,<subroutine_list>,→,ε,
-4,<subroutine>,→,ACTION <rec_type> IDENTIFIER L_PAREN <params> R_PAREN L_BRACE <statement_list> R_BRACE,
-5,<params>,→,<param_list>,
-6,<params>,→,ε,
-7,<param_list>,→,<param_list> COMMA <param_item>,
-8,<param_list>,→,<param_item>,
-9,<param_item>,→,<data_type> IDENTIFIER,
-10,<param_item>,→,CLUSTER <data_type> IDENTIFIER L_BRACKET R_BRACKET,
-11,<param_item>,→,CLUSTER <data_type> IDENTIFIER L_BRACKET R_BRACKET L_BRACKET R_BRACKET,
-12,<rec_type>,→,<data_type>,
-13,<rec_type>,→,CLUSTER <data_type> L_BRACKET R_BRACKET,
-14,<rec_type>,→,CLUSTER <data_type> L_BRACKET R_BRACKET L_BRACKET R_BRACKET,
-15,<rec_type>,→,VOID,
-16,<declaration>,→,<id_decl>,
-17,<declaration>,→,<const_decl>,
-18,<declaration>,→,<cluster_decl>,
-19,<id_decl>,→,<data_type> <id_list> SEMICOLON,
-20,<id_list>,→,<id_list> COMMA <id_init>,
-21,<id_list>,→,<id_init>,
-22,<id_init>,→,IDENTIFIER,
-23,<id_init>,→,IDENTIFIER ASSIGN <expr>,
-24,<const_decl>,→,INSTINCT <data_type> <const_list> SEMICOLON,
-25,<const_list>,→,<const_list> COMMA <const_init>,
-26,<const_list>,→,<const_init>,
-27,<const_init>,→,IDENTIFIER ASSIGN <expr>,
-28,<cluster_decl>,→,<data_type> CLUSTER <cluster_list> SEMICOLON,
-29,<cluster_list>,→,<cluster_list> COMMA <cluster_item>,
-30,<cluster_list>,→,<cluster_item>,
-31,<cluster_item>,→,<cluster_1D>,
-32,<cluster_item>,→,<cluster_2D>,
-33,<cluster_1D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET,
-34,<cluster_1D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET ASSIGN <1D_init>,
-35,<1D_init>,→,L_BRACE <cluster_1D_list> R_BRACE,
-36,<cluster_1D_list>,→,<cluster_1D_list> COMMA <add_expr>,
-37,<cluster_1D_list>,→,<add_expr>,
-38,<cluster_2D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET L_BRACKET PULSE_LIT R_BRACKET,
-39,<cluster_2D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET L_BRACKET PULSE_LIT R_BRACKET ASSIGN <2D_init>,
-40,<2D_init>,→,L_BRACE <cluster_2D_list> R_BRACE,
-41,<cluster_2D_list>,→,<cluster_2D_list> COMMA <1D_init>,
-42,<cluster_2D_list>,→,<1D_init>,
-43,<data_type>,→,PULSE,
-44,<data_type>,→,SPARK ,
-45,<data_type>,→,STREAM ,
-46,<data_type>,→,THOUGHT ,
-47,<data_type>,→,NEURON ,
-48,<data_type>,→,SYNAPSE,
-49,<statement_list>,→,<statement_list> <statement>,
-50,<statement_list>,→,ε,
-51,<statement>,→,<declaration>,
-52,<statement>,→,<assign_stmt> SEMICOLON,
-53,<statement>,→,<builtin_call> SEMICOLON,
-54,<statement>,→,<subroutine_call> SEMICOLON,
-55,<statement>,→,<conditional_stmt>,
-56,<statement>,→,<loop_stmt>,
-57,<statement>,→,<switch_stmt>,
-58,<statement>,→,<io_stmt>,
-59,<statement>,→,RECALL <expr> SEMICOLON,
-60,<statement>,→,FLOW SEMICOLON,
-61,<statement>,→,DORMANT SEMICOLON,
-62,<io_stmt>,→,SENSE <data_type> IDENTIFIER SEMICOLON,
-63,<io_stmt>,→,EXPRESS L_PAREN <expr> R_PAREN SEMICOLON,
-64,<conditional_stmt>,→,STIMULATE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE <opt_inhibit>,
-65,<opt_inhibit>,→,INHIBIT L_BRACE <statement_list> R_BRACE,
-66,<opt_inhibit>,→,ε,
-67,<loop_stmt>,→,CYCLE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE,
-68,<loop_stmt>,→,REACT L_BRACE <statement_list> R_BRACE CYCLE L_PAREN <expr> R_PAREN SEMICOLON,
-69,<loop_stmt>,→,ECHO L_PAREN <echo_init> <expr> SEMICOLON <assign_stmt> R_PAREN L_BRACE <statement_list> R_BRACE,
-70,<echo_init>,→,<assign_stmt> SEMICOLON,
-71,<echo_init>,→,<declaration>,
-72,<switch_stmt>,→,EVALUATE L_PAREN <expr> R_PAREN L_BRACE <case_list> <opt_base> R_BRACE,
-73,<case_list>,→,<case_list> <case_item>,
-74,<case_list>,→,ε,
-75,<case_item>,→,PATH <case_value> COLON <statement_list>,
-76,<opt_base>,→,BASE COLON <statement_list>,
-77,<opt_base>,→,ε,
-80,<case_value>,→,PULSE_LIT,
-81,<case_value>,→,SPARK_LIT,
-82,<case_value>,→,STREAM_LIT,
-83,<case_value>,→,THOUGHT_LIT,
-84,<case_value>,→,NEURON_LIT,
-85,<assign_stmt>,→,<variable_access> <assign_op> <expr>,
-86,<expr>,→,<logic_or>,
-87,<logic_or>,→,<logic_or> <or_op> <logic_xor>,
-88,<logic_or>,→,<logic_xor>,
-89,<logic_xor>,→,<logic_xor> <xor_op> <logic_and>,
-90,<logic_xor>,→,<logic_and>,
-91,<logic_and>,→,<logic_and> <and_op> <rel_equal>,
-92,<logic_and>,→,<rel_equal>,
-93,<rel_equal>,→,<rel_equal> <releq_op> <rel_expr>,
-94,<rel_equal>,→,<rel_expr>,
-95,<rel_expr>,→,<rel_expr> <rel_op> <add_expr>,
-96,<rel_expr>,→,<add_expr>,
-97,<add_expr>,→,<add_expr> <add_op> <mult_expr>,
-98,<add_expr>,→,<mult_expr>,
-99,<mult_expr>,→,<mult_expr> <mul_op> <unary_expr>,
-100,<mult_expr>,→,<unary_expr>,
-101,<pow_expr>,→,<postfix_expr> EXPONENT <pow_expr>,right recursion for right associativity
-102,<pow_expr>,→,<postfix_expr>,
-103,<unary_expr>,→,<unary_op> <unary_expr>,
-104,<unary_expr>,→,<pow_expr>,
-105,<postfix_expr>,→,<postfix_expr> INCREMENT,
-106,<postfix_expr>,→,<postfix_expr> DECREMENT,
-107,<postfix_expr>,→,<factor>,
-108,<factor>,→,<variable_access>,
-109,<factor>,→,<literal>,
-110,<factor>,→,L_PAREN <expr> R_PAREN,
-111,<factor>,→,<subroutine_call>,
-112,<factor>,→,<builtin_call>,
-113,<variable_access>,→,<variable_access> L_BRACKET <expr> R_BRACKET,
-114,<variable_access>,→,IDENTIFIER,
-115,<subroutine_call>,→,IDENTIFIER L_PAREN <arg_list> R_PAREN,
-116,<builtin_call>,→,LENGTH L_PAREN <expr> R_PAREN,
-117,<builtin_call>,→,TRANSCRIBE L_PAREN <expr> R_PAREN,
-118,<arg_list>,→,<args>,
-119,<arg_list>,→,ε,
-120,<args>,→,<args> COMMA <expr>,
-121,<args>,→,<expr>,
-122,<literal>,→,PULSE_LIT,
-123,<literal>,→,SPARK_LIT,
-124,<literal>,→,STREAM_LIT,
-125,<literal>,→,THOUGHT_LIT,
-126,<literal>,→,NEURON_LIT,
-127,<literal>,→,TRUE,
-128,<literal>,→,FALSE,
-129,<assign_op>,→,ASSIGN,
-130,<assign_op>,→,PLUS_ASSIGN,
-131,<assign_op>,→,MINUS_ASSIGN,
-132,<assign_op>,→,MUL_ASSIGN,
-133,<assign_op>,→,DIV_ASSIGN,
-134,<assign_op>,→,MOD_ASSIGN,
-135,<or_op>,→,OR,
-136,<xor_op>,→,XOR,
-137,<and_op>,→,AND,
-138,<releq_op>,→,EQUAL_TO ,
-139,<releq_op>,→,NOT_EQUAL,
-140,<rel_op>,→,GREATER,
-141,<rel_op>,→,LESS,
-142,<rel_op>,→,GREATER_EQ,
-143,<rel_op>,→,LESS_EQ,
-144,<add_op>,→,PLUS,
-145,<add_op>,→,MINUS,
-146,<mul_op>,→,STAR,
-147,<mul_op>,→,SLASH,
-148,<mul_op>,→,MOD,
-149,<unary_op>,→,INCREMENT,
-150,<unary_op>,→,DECREMENT,
-151,<unary_op>,→,PLUS,
-,<unary_op>,→,MINUS,
-,<unary_op>,→,NOT,
+RULE #,LR(1) GRAMMAR,,
+0,<program'>,→,<program>
+1,<program>,→,<subroutine_list> ACTIVATE L_BRACE <statement_list> R_BRACE
+2,<subroutine_list>,→,<subroutine_list> <subroutine>
+3,<subroutine_list>,→,ε
+4,<subroutine>,→,ACTION <rec_type> IDENTIFIER L_PAREN <params> R_PAREN L_BRACE <statement_list> R_BRACE
+5,<params>,→,<param_list>
+6,<params>,→,ε
+7,<param_list>,→,<param_list> COMMA <param_item>
+8,<param_list>,→,<param_item>
+9,<param_item>,→,<data_type> IDENTIFIER
+10,<param_item>,→,CLUSTER <data_type> IDENTIFIER L_BRACKET R_BRACKET
+11,<param_item>,→,CLUSTER <data_type> IDENTIFIER L_BRACKET R_BRACKET L_BRACKET R_BRACKET
+12,<rec_type>,→,<data_type>
+13,<rec_type>,→,CLUSTER <data_type> L_BRACKET R_BRACKET
+14,<rec_type>,→,CLUSTER <data_type> L_BRACKET R_BRACKET L_BRACKET R_BRACKET
+15,<rec_type>,→,VOID
+16,<declaration>,→,<id_decl>
+17,<declaration>,→,<const_decl>
+18,<declaration>,→,<cluster_decl>
+19,<id_decl>,→,<data_type> <id_list> SEMICOLON
+20,<id_list>,→,<id_list> COMMA <id_init>
+21,<id_list>,→,<id_init>
+22,<id_init>,→,IDENTIFIER
+23,<id_init>,→,IDENTIFIER ASSIGN <expr>
+24,<const_decl>,→,INSTINCT <data_type> <const_list> SEMICOLON
+25,<const_list>,→,<const_list> COMMA <const_init>
+26,<const_list>,→,<const_init>
+27,<const_init>,→,IDENTIFIER ASSIGN <expr>
+28,<cluster_decl>,→,<data_type> CLUSTER <cluster_list> SEMICOLON
+29,<cluster_list>,→,<cluster_list> COMMA <cluster_item>
+30,<cluster_list>,→,<cluster_item>
+31,<cluster_item>,→,<cluster_1D>
+32,<cluster_item>,→,<cluster_2D>
+33,<cluster_1D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET
+34,<cluster_1D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET ASSIGN <1D_init>
+35,<1D_init>,→,L_BRACE <cluster_1D_list> R_BRACE
+36,<cluster_1D_list>,→,<cluster_1D_list> COMMA <add_expr>
+37,<cluster_1D_list>,→,<add_expr>
+38,<cluster_2D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET L_BRACKET PULSE_LIT R_BRACKET
+39,<cluster_2D>,→,IDENTIFIER L_BRACKET PULSE_LIT R_BRACKET L_BRACKET PULSE_LIT R_BRACKET ASSIGN <2D_init>
+40,<2D_init>,→,L_BRACE <cluster_2D_list> R_BRACE
+41,<cluster_2D_list>,→,<cluster_2D_list> COMMA <1D_init>
+42,<cluster_2D_list>,→,<1D_init>
+43,<data_type>,→,PULSE
+44,<data_type>,→,SPARK 
+45,<data_type>,→,STREAM 
+46,<data_type>,→,THOUGHT 
+47,<data_type>,→,NEURON 
+48,<data_type>,→,SYNAPSE
+49,<statement_list>,→,<statement_list> <statement>
+50,<statement_list>,→,ε
+51,<statement>,→,<declaration>
+52,<statement>,→,<assign_stmt> SEMICOLON
+53,<statement>,→,<builtin_call> SEMICOLON
+54,<statement>,→,<subroutine_call> SEMICOLON
+55,<statement>,→,<conditional_stmt>
+56,<statement>,→,<loop_stmt>
+57,<statement>,→,<switch_stmt>
+58,<statement>,→,<io_stmt>
+59,<statement>,→,RECALL <expr> SEMICOLON
+60,<statement>,→,FLOW SEMICOLON
+61,<statement>,→,DORMANT SEMICOLON
+62,<io_stmt>,→,SENSE <data_type> IDENTIFIER SEMICOLON
+63,<io_stmt>,→,EXPRESS L_PAREN <expr> R_PAREN SEMICOLON
+64,<conditional_stmt>,→,STIMULATE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE <opt_inhibit>
+65,<opt_inhibit>,→,INHIBIT L_BRACE <statement_list> R_BRACE
+66,<opt_inhibit>,→,ε
+67,<loop_stmt>,→,CYCLE L_PAREN <expr> R_PAREN L_BRACE <statement_list> R_BRACE
+68,<loop_stmt>,→,REACT L_BRACE <statement_list> R_BRACE CYCLE L_PAREN <expr> R_PAREN SEMICOLON
+69,<loop_stmt>,→,ECHO L_PAREN <echo_init> <expr> SEMICOLON <assign_stmt> R_PAREN L_BRACE <statement_list> R_BRACE
+70,<echo_init>,→,<assign_stmt> SEMICOLON
+71,<echo_init>,→,<declaration>
+72,<switch_stmt>,→,EVALUATE L_PAREN <expr> R_PAREN L_BRACE <case_list> <opt_base> R_BRACE
+73,<case_list>,→,<case_list> <case_item>
+74,<case_list>,→,ε
+75,<case_item>,→,PATH <case_value> COLON <statement_list>
+76,<opt_base>,→,BASE COLON <statement_list>
+77,<opt_base>,→,ε
+80,<case_value>,→,PULSE_LIT
+81,<case_value>,→,SPARK_LIT
+82,<case_value>,→,STREAM_LIT
+83,<case_value>,→,THOUGHT_LIT
+84,<case_value>,→,NEURON_LIT
+85,<assign_stmt>,→,<variable_access> <assign_op> <expr>
+86,<expr>,→,<logic_or>
+87,<logic_or>,→,<logic_or> <or_op> <logic_xor>
+88,<logic_or>,→,<logic_xor>
+89,<logic_xor>,→,<logic_xor> <xor_op> <logic_and>
+90,<logic_xor>,→,<logic_and>
+91,<logic_and>,→,<logic_and> <and_op> <rel_equal>
+92,<logic_and>,→,<rel_equal>
+93,<rel_equal>,→,<rel_equal> <releq_op> <rel_expr>
+94,<rel_equal>,→,<rel_expr>
+95,<rel_expr>,→,<rel_expr> <rel_op> <add_expr>
+96,<rel_expr>,→,<add_expr>
+97,<add_expr>,→,<add_expr> <add_op> <mult_expr>
+98,<add_expr>,→,<mult_expr>
+99,<mult_expr>,→,<mult_expr> <mul_op> <unary_expr>
+100,<mult_expr>,→,<unary_expr>
+101,<pow_expr>,→,<postfix_expr> EXPONENT <pow_expr>
+102,<pow_expr>,→,<postfix_expr>
+103,<unary_expr>,→,<unary_op> <unary_expr>
+104,<unary_expr>,→,<pow_expr>
+105,<postfix_expr>,→,<postfix_expr> INCREMENT
+106,<postfix_expr>,→,<postfix_expr> DECREMENT
+107,<postfix_expr>,→,<factor>
+108,<factor>,→,<variable_access>
+109,<factor>,→,<literal>
+110,<factor>,→,L_PAREN <expr> R_PAREN
+111,<factor>,→,<subroutine_call>
+112,<factor>,→,<builtin_call>
+113,<variable_access>,→,<variable_access> L_BRACKET <expr> R_BRACKET
+114,<variable_access>,→,IDENTIFIER
+115,<subroutine_call>,→,IDENTIFIER L_PAREN <arg_list> R_PAREN
+116,<builtin_call>,→,LENGTH L_PAREN <expr> R_PAREN
+117,<builtin_call>,→,TRANSCRIBE L_PAREN <expr> R_PAREN
+118,<arg_list>,→,<args>
+119,<arg_list>,→,ε
+120,<args>,→,<args> COMMA <expr>
+121,<args>,→,<expr>
+122,<literal>,→,PULSE_LIT
+123,<literal>,→,SPARK_LIT
+124,<literal>,→,STREAM_LIT
+125,<literal>,→,THOUGHT_LIT
+126,<literal>,→,NEURON_LIT
+127,<literal>,→,TRUE
+128,<literal>,→,FALSE
+129,<assign_op>,→,ASSIGN
+130,<assign_op>,→,PLUS_ASSIGN
+131,<assign_op>,→,MINUS_ASSIGN
+132,<assign_op>,→,MUL_ASSIGN
+133,<assign_op>,→,DIV_ASSIGN
+134,<assign_op>,→,MOD_ASSIGN
+135,<or_op>,→,OR
+136,<xor_op>,→,XOR
+137,<and_op>,→,AND
+138,<releq_op>,→,EQUAL_TO 
+139,<releq_op>,→,NOT_EQUAL
+140,<rel_op>,→,GREATER
+141,<rel_op>,→,LESS
+142,<rel_op>,→,GREATER_EQ
+143,<rel_op>,→,LESS_EQ
+144,<add_op>,→,PLUS
+145,<add_op>,→,MINUS
+146,<mul_op>,→,STAR
+147,<mul_op>,→,SLASH
+148,<mul_op>,→,MOD
+149,<unary_op>,→,INCREMENT
+150,<unary_op>,→,DECREMENT
+151,<unary_op>,→,PLUS
+152,<unary_op>,→,MINUS
+153,<unary_op>,→,NOT

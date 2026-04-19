@@ -75,7 +75,7 @@ public class LR1ParserGenerator {
 
     public static void main(String[] args) {
         LR1ParserGenerator gen = new LR1ParserGenerator();
-        String inputFile = "grammar.csv";
+        String inputFile = "grammar2.csv";
 
         try {
             gen.loadGrammarFromCSV(inputFile);
@@ -83,7 +83,10 @@ public class LR1ParserGenerator {
             gen.buildStates();
             gen.buildParsingTable();
 
-            // States Data CSV (Now with grouping and Epsilon)
+            // Export First and Follow sets
+            gen.printFirstFollowToCSV("First_Follow_Sets.csv");
+
+            // States Data CSV
             gen.printStatesToCSV("States_Data.csv");
 
             // Parsing Table CSV
@@ -95,7 +98,6 @@ public class LR1ParserGenerator {
         }
     }
 
-    // --- Core Logic ---
     public void loadGrammarFromCSV(String fileName) throws IOException {
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         String line;
@@ -119,7 +121,7 @@ public class LR1ParserGenerator {
         br.close();
         for (Rule r : grammar) {
             for (String sym : r.rhs) {
-                if (!nonTerminals.contains(sym)) {
+                if (!nonTerminals.contains(sym) && !sym.equals("ε")) {
                     terminals.add(sym);
                 }
             }
@@ -128,6 +130,7 @@ public class LR1ParserGenerator {
     }
 
     public void computeFirstFollow() {
+        // Initialize First Sets
         for (String nt : nonTerminals) {
             firstSets.put(nt, new HashSet<>());
         }
@@ -144,6 +147,40 @@ public class LR1ParserGenerator {
                 }
             }
         }
+
+        // Initialize Follow Sets
+        for (String nt : nonTerminals) {
+            followSets.put(nt, new HashSet<>());
+        }
+        if (!grammar.isEmpty()) {
+            followSets.get(grammar.get(0).lhs).add("$");
+        }
+
+        changed = true;
+        while (changed) {
+            changed = false;
+            for (Rule r : grammar) {
+                for (int i = 0; i < r.rhs.size(); i++) {
+                    String sym = r.rhs.get(i);
+                    if (nonTerminals.contains(sym)) {
+                        List<String> trailer = r.rhs.subList(i + 1, r.rhs.size());
+                        Set<String> firstOfTrailer = getFirstOfSequence(trailer);
+
+                        Set<String> toAdd = new HashSet<>(firstOfTrailer);
+                        boolean hasEpsilon = toAdd.remove("ε");
+
+                        if (followSets.get(sym).addAll(toAdd)) {
+                            changed = true;
+                        }
+                        if (hasEpsilon || trailer.isEmpty()) {
+                            if (followSets.get(sym).addAll(followSets.get(r.lhs))) {
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private Set<String> getFirstOfSequence(List<String> seq) {
@@ -153,7 +190,7 @@ public class LR1ParserGenerator {
             return res;
         }
         for (String sym : seq) {
-            Set<String> firstSym = firstSets.getOrDefault(sym, Collections.singleton(sym));
+            Set<String> firstSym = firstSets.getOrDefault(sym, new HashSet<>(Collections.singleton(sym)));
             res.addAll(firstSym);
             if (!firstSym.contains("ε")) {
                 res.remove("ε");
@@ -163,6 +200,20 @@ public class LR1ParserGenerator {
         return res;
     }
 
+    // --- New CSV Export Method for First/Follow ---
+    public void printFirstFollowToCSV(String fileName) throws IOException {
+        try (PrintWriter csv = new PrintWriter(new FileWriter(fileName))) {
+            csv.println("NON-TERMINAL,FIRST SET,FOLLOW SET");
+            for (String nt : nonTerminals) {
+                String first = String.join(" ", firstSets.get(nt));
+                String follow = String.join(" ", followSets.get(nt));
+                csv.printf("\"%s\",\"%s\",\"%s\"\n", nt, first, follow);
+            }
+        }
+    }
+
+    // Rest of your existing buildStates, buildParsingTable, and print methods...
+    // (Included below to ensure the file is complete and compilable)
     private Set<LR1Item> closure(Set<LR1Item> items) {
         Set<LR1Item> closureSet = new LinkedHashSet<>(items);
         boolean changed = true;
@@ -178,7 +229,6 @@ public class LR1ParserGenerator {
                         if (lookaheads.remove("ε") || beta.isEmpty()) {
                             lookaheads.add(item.lookahead);
                         }
-
                         for (Rule r : grammar) {
                             if (r.lhs.equals(nextSym)) {
                                 for (String la : lookaheads) {
@@ -196,6 +246,9 @@ public class LR1ParserGenerator {
 
     public void buildStates() {
         Set<LR1Item> start = new HashSet<>();
+        if (grammar.isEmpty()) {
+            return;
+        }
         start.add(new LR1Item(grammar.get(0), 0, "$"));
         states.add(new State(0, closure(start)));
         for (int i = 0; i < states.size(); i++) {
@@ -218,6 +271,7 @@ public class LR1ParserGenerator {
                 for (State s : states) {
                     if (s.items.equals(closed)) {
                         sid = s.id;
+                        break;
                     }
                 }
                 if (sid == -1) {
@@ -238,7 +292,7 @@ public class LR1ParserGenerator {
                     String sym = item.rule.rhs.get(item.dot);
                     if (terminals.contains(sym)) {
                         actionTable.get(s.id).put(sym, "s" + s.transitions.get(sym));
-                    } else {
+                    } else if (nonTerminals.contains(sym)) {
                         gotoTable.get(s.id).put(sym, s.transitions.get(sym));
                     }
                 } else if (item.rule.id == 0 && item.lookahead.equals("$")) {
@@ -250,37 +304,31 @@ public class LR1ParserGenerator {
         }
     }
 
-    // --- Export Logic ---
     public void printStatesToCSV(String fileName) throws IOException {
         try (PrintWriter csv = new PrintWriter(new FileWriter(fileName))) {
             csv.println("STATE,RULE,LOOKAHEAD,ACTION / GOTO,STATE(S) / RULE (R)");
-
             for (State s : states) {
-                // Group items by Rule and Dot to combine lookaheads into one row
                 Map<String, Set<String>> groupedItems = new LinkedHashMap<>();
                 Map<String, LR1Item> referenceItem = new HashMap<>();
-
                 List<LR1Item> sortedItems = new ArrayList<>(s.items);
                 sortedItems.sort(Comparator.comparingInt((LR1Item a) -> a.rule.id).thenComparingInt(a -> a.dot));
-
                 for (LR1Item item : sortedItems) {
                     String key = item.rule.id + "|" + item.dot;
                     groupedItems.computeIfAbsent(key, k -> new TreeSet<>()).add(item.lookahead);
                     referenceItem.putIfAbsent(key, item);
                 }
-
                 for (String key : groupedItems.keySet()) {
                     LR1Item item = referenceItem.get(key);
                     String las = String.join(", ", groupedItems.get(key));
-
                     String action = "";
                     String target = "";
-
                     if (item.dot < item.rule.rhs.size()) {
                         String next = item.rule.rhs.get(item.dot);
-                        int tid = s.transitions.get(next);
-                        action = (terminals.contains(next) ? "Shift (" : "Goto (") + next + ")";
-                        target = "S" + tid;
+                        Integer tid = s.transitions.get(next);
+                        if (tid != null) {
+                            action = (terminals.contains(next) ? "Shift (" : "Goto (") + next + ")";
+                            target = "S" + tid;
+                        }
                     } else {
                         if (item.rule.id == 0 && groupedItems.get(key).contains("$")) {
                             action = "Acceptance";
@@ -290,11 +338,9 @@ public class LR1ParserGenerator {
                             target = "R" + item.rule.id;
                         }
                     }
-
-                    csv.printf("\"S%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-                            s.id, formatManualRule(item), las, action, target);
+                    csv.printf("\"S%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n", s.id, formatManualRule(item), las, action, target);
                 }
-                csv.println(",,,,"); // Separator between states
+                csv.println(",,,,");
             }
         }
     }
@@ -303,7 +349,7 @@ public class LR1ParserGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append(item.rule.lhs).append(" -> ");
         if (item.rule.rhs.isEmpty()) {
-            sb.append(". ε"); // Shows the epsilon symbol as requested
+            sb.append(". ε");
         } else {
             for (int i = 0; i < item.rule.rhs.size(); i++) {
                 if (i == item.dot) {
@@ -320,34 +366,20 @@ public class LR1ParserGenerator {
 
     public void printParsingTableToCSV(String fileName) throws IOException {
         try (PrintWriter csv = new PrintWriter(new FileWriter(fileName))) {
-            // Prepare symbols: Terminals first, then cleaned Non-Terminals
             List<String> rawNonTerminals = new ArrayList<>(nonTerminals);
-            List<String> displayHeaders = new ArrayList<>();
-
-            // Add Terminals as they are
-            displayHeaders.addAll(terminals);
-
-            // Clean and Add Non-Terminals (remove brackets and uppercase)
-            for (String nt : rawNonTerminals) {
-                String cleaned = nt.replace("<", "").replace(">", "").toUpperCase();
-                displayHeaders.add(cleaned);
-            }
-
-            // 1. Write Header Row
             csv.print("STATE");
-            for (String header : displayHeaders) {
-                csv.print("," + header);
+            for (String t : terminals) {
+                csv.print("," + t);
+            }
+            for (String nt : rawNonTerminals) {
+                csv.print("," + nt.replace("<", "").replace(">", "").toUpperCase());
             }
             csv.println();
 
-            // 2. Write Data Rows
             for (int i = 0; i < states.size(); i++) {
-                csv.print("S" + i); // State label as S0, S1...
-
-                // Print Terminal Actions
+                csv.print("S" + i);
                 for (String t : terminals) {
                     String action = actionTable.get(i).getOrDefault(t, "");
-                    // Format: s5 -> S5, r10 -> R10, acc -> ACCEPT
                     if (action.startsWith("s")) {
                         action = "S" + action.substring(1);
                     } else if (action.startsWith("r")) {
@@ -355,15 +387,11 @@ public class LR1ParserGenerator {
                     } else if (action.equals("acc")) {
                         action = "ACCEPT";
                     }
-
                     csv.print("," + action);
                 }
-
-                // Print Non-Terminal Gotos
                 for (String nt : rawNonTerminals) {
                     Integer gotoState = gotoTable.get(i).get(nt);
-                    String cell = (gotoState != null) ? "S" + gotoState : "";
-                    csv.print("," + cell);
+                    csv.print("," + (gotoState != null ? "S" + gotoState : ""));
                 }
                 csv.println();
             }
