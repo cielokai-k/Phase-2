@@ -12,7 +12,7 @@ public class Tester {
             String csvPath = "Misc/LR1_Parsing_Table.csv";
             ParseTable table = TableLoader.load(csvPath);
 
-            String filePath = "Sample Programs/small_parse.txt";
+            String filePath = "Sample Programs/error_free.txt";
             SymTable symTable = new SymTable();
             Scanner scanner = new Scanner(new File(filePath), symTable);
 
