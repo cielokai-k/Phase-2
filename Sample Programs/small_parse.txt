@@ -1,8 +1,6 @@
 activate {
-    stimulate (x > 10) {
-        y = 5;
-    }
-    inhibit{
-        y = 0;
-    }
+    express("Hello" 
+
+    pulse z = 20;      
+    express("Recovered successfully");
 }

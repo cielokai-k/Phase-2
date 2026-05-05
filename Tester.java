@@ -19,7 +19,6 @@ public class Tester {
             ParseTable table = TableLoader.load(csvPath);
             SymTable symTable = new SymTable();
 
-            // Step 1: Scanner Token Printout (Requirement 1.2)
             logWriter.println("=== SCANNER TOKEN STREAM ===");
             Scanner scannerForTokens = new Scanner(new File(inputPath), symTable);
             Token t;
@@ -28,11 +27,9 @@ public class Tester {
             }
             logWriter.println("============================\n");
 
-            // Step 2: Parser Actions
             logWriter.println("=== PARSER ACTION LOG ===");
             Scanner scannerForParsing = new Scanner(new File(inputPath), symTable);
 
-            // Pass the logWriter to the Parser
             Parser parser = new Parser(scannerForParsing, table, logWriter);
             ASTNode root = parser.parse();
 

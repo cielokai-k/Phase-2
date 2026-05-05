@@ -40,7 +40,6 @@ public class TableLoader {
                 continue;
             }
 
-            // Handle "S346" or "346"
             int state = Integer.parseInt(cells[0].trim().replaceAll("[^0-9]", ""));
 
             Map<TokenType, Action> actionMap = new HashMap<>();
@@ -68,7 +67,6 @@ public class TableLoader {
                         actionMap.put(type, new Action(Action.ActionType.REDUCE, Integer.parseInt(val.substring(1))));
                     }
                 } else {
-                    // Normalize: Remove < > and force Uppercase (e.g., <STATEMENT_LIST> -> STATEMENT_LIST)
                     String cleanNonTerminal = colName.replace("<", "").replace(">", "").replace("'", "").toUpperCase().trim();
                     try {
                         int nextState = Integer.parseInt(val.replaceAll("[^0-9]", ""));
