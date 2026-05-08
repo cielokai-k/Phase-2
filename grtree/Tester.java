@@ -1,5 +1,6 @@
-import java.net.* ;
+package grtree ;
 import java.io.* ;
+import java.net.* ;
 
 public class Tester {
 
