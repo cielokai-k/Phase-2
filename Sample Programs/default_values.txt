@@ -7,13 +7,13 @@ activate {
     neuron letter;
     thought message;
 
-    EXPRESS("=== DEFAULT VALUES ===");
+    express("=== DEFAULT VALUES ===");
 
-    EXPRESS(count);
-    EXPRESS(temperature);
-    EXPRESS(gravity);
-    EXPRESS(ready);
-    EXPRESS(letter);
-    EXPRESS(message);
+    express(count);
+    express(temperature);
+    express(gravity);
+    express(ready);
+    express(letter);
+    express(message);
 
 }

@@ -4,29 +4,29 @@ activate {
     spark b = 2.5;
     stream c = 3.14159;
 
-    EXPRESS("=== MATH OPERATIONS ===");
+    express("=== MATH OPERATIONS ===");
 
-    EXPRESS(a + 5);
-    EXPRESS(a + b);
-    EXPRESS(c * 2);
-    EXPRESS(a / 2);
-    EXPRESS(a % 3);
-    EXPRESS(a ** 2);
+    express(a + 5);
+    express(a + b);
+    express(c * 2);
+    express(a / 2);
+    express(a % 3);
+    express(a ** 2);
 
-    EXPRESS("=== TYPE COERCION ===");
+    express("=== TYPE COERCION ===");
 
     pulse whole;
     whole = 8.9;
 
-    EXPRESS(whole);
+    express(whole);
 
     synapse flag;
     flag = 1;
 
-    EXPRESS(flag);
+    express(flag);
 
     thought text = "Hello";
 
-    EXPRESS(text + " World");
+    express(text + " World");
 
 }
