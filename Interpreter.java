@@ -12,18 +12,7 @@ public class Interpreter {
     }
 
     public void execute(ASTNode root) {
-        try {
-            evaluateNode(root);
-        } catch (InterpreterException e) {
-            // Rethrow interpreter exceptions as-is
-            throw e;
-        } catch (RuntimeException e) {
-            // Wrap other runtime exceptions with line info if not already wrapped
-            if (!e.getMessage().startsWith("Line ")) {
-                throw new InterpreterException("Line " + currentLine + ": " + e.getMessage(), currentLine);
-            }
-            throw e;
-        }
+        evaluateNode(root);
     }
 
     private Object evaluateNode(ASTNode node) {
@@ -88,6 +77,17 @@ public class Interpreter {
                     // =========================================================
                     // 4. MATH & EXPRESSIONS
                     // =========================================================
+                    // FIX 1: Explicit EXPR case so errors inside expressions always
+                    // propagate up as InterpreterException instead of being re-wrapped
+                    // or silently swallowed by the outer catch in default traversal.
+                    case "EXPR":
+                        for (ASTNode child : children) {
+                            if (!isEpsilon(child)) {
+                                return evaluateNode(child);
+                            }
+                        }
+                        return null;
+
                     case "ADD_EXPR":
                     case "MULT_EXPR":
                     case "POW_EXPR":
@@ -123,6 +123,17 @@ public class Interpreter {
                     case "LOOP_STMT":
                         return handleLoop(children);
 
+                    // FIX 2: Explicit ECHO_INIT case so for-loop initializer errors
+                    // (e.g. duplicate declaration, bad type) surface cleanly instead
+                    // of being swallowed by the default traversal's outer catch block.
+                    case "ECHO_INIT":
+                        for (ASTNode child : children) {
+                            if (!isEpsilon(child)) {
+                                evaluateNode(child);
+                            }
+                        }
+                        return null;
+
                     // =========================================================
                     // 7. SUBROUTINES
                     // =========================================================
@@ -139,12 +150,15 @@ public class Interpreter {
                         return handleBuiltinCall(children);
 
                     default:
+                        Object last = null;
+
                         for (ASTNode child : children) {
                             if (!isEpsilon(child)) {
-                                return evaluateNode(child);
+                                last = evaluateNode(child);
                             }
                         }
-                        return null;
+
+                        return last;
                 }
             } else {
                 return extractTerminalValue(node);
@@ -208,8 +222,24 @@ public class Interpreter {
 
     private Object handleVariableDeclaration(List<ASTNode> children) {
         String declDataType = extractLexeme(children.get(0));
-        boolean isInstinct = false;
 
+        // FIX 3: ID_DECL has two forms in the grammar:
+        //   (a) DATA_TYPE CLUSTER CLUSTER_LIST SEMICOLON  → cluster declaration
+        //   (b) DATA_TYPE ID_LIST SEMICOLON               → plain variable declaration
+        //
+        // The parser emits both as ID_DECL nodes. Detect the cluster form by checking
+        // whether child[1] is the CLUSTER keyword token, and delegate accordingly.
+        // Without this check, cluster declarations silently matched nothing (no ID_LIST
+        // child found), the variable was never stored, and all subsequent statements
+        // that referenced it were dropped by parser error recovery — making divide-by-zero
+        // and array-out-of-bounds unreachable by the interpreter entirely.
+        if (children.size() >= 3 && extractLexeme(children.get(1)).equalsIgnoreCase("cluster")) {
+            evaluateCluster(declDataType, children.get(2));
+            return null;
+        }
+
+        // Plain variable declaration
+        boolean isInstinct = false;
         for (ASTNode child : children) {
             if (extractLexeme(child).toLowerCase().equals("instinct")) {
                 isInstinct = true;
@@ -528,12 +558,11 @@ public class Interpreter {
                     }
                     try {
                         evaluateNode(children.get(5));
-                    } catch (RuntimeException innerE) {
-                        if (innerE.getMessage().equals("CEREBRA_FLOW")) {
-                            continue;
-                        } else {
-                            throw innerE;
+                    } catch (RuntimeException e) {
+                        if (e.getMessage().startsWith("CEREBRA_")) {
+                            throw e;
                         }
+                        throw new InterpreterException("Line " + currentLine + ": " + e.getMessage(), currentLine);
                     }
                 }
             } // ECHO loop (for)
@@ -634,7 +663,17 @@ public class Interpreter {
             mapParameters(funcChildren.get(4), args);
             evaluateNode(funcChildren.get(7));
         } catch (RuntimeException e) {
-            if (e.getMessage().startsWith("CEREBRA_RETURN:")) {
+            // FIX 4: Check InterpreterException FIRST before CEREBRA_RETURN.
+            // Previously the order was reversed: CEREBRA_RETURN was checked first,
+            // which meant an InterpreterException (e.g. divide-by-zero thrown inside
+            // performMath) whose message didn't start with "CEREBRA_RETURN:" fell
+            // through to the generic re-wrap, losing the original error context.
+            // Now InterpreterException is always re-thrown immediately, preserving
+            // the exact line number and message from where the error originated.
+            if (e instanceof InterpreterException) {
+                throw e;
+            }
+            if (e.getMessage() != null && e.getMessage().startsWith("CEREBRA_RETURN:")) {
                 String retStr = e.getMessage().substring(15);
                 try {
                     if (retStr.contains(".")) {
@@ -644,8 +683,6 @@ public class Interpreter {
                 } catch (Exception numE) {
                     return retStr;
                 }
-            } else if (e instanceof InterpreterException) {
-                throw e;
             } else {
                 throw new InterpreterException(
                         "Line " + currentLine + ": Error in subroutine '" + callName + "' - " + e.getMessage(),
@@ -1178,30 +1215,5 @@ public class Interpreter {
         }
 
         return "thought";
-    }
-}
-
-// Custom exception class for interpreter errors
-class InterpreterException extends RuntimeException {
-
-    private int lineNumber;
-
-    public InterpreterException(String message, int lineNumber) {
-        super(message);
-        this.lineNumber = lineNumber;
-    }
-
-    public InterpreterException(String message, int lineNumber, Throwable cause) {
-        super(message, cause);
-        this.lineNumber = lineNumber;
-    }
-
-    public int getLineNumber() {
-        return lineNumber;
-    }
-
-    @Override
-    public String toString() {
-        return getMessage();
     }
 }

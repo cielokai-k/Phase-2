@@ -59,12 +59,11 @@ public class Tester {
                 System.out.println("---------------------");
 
                 try {
-                    // 3. Execute the program
                     interpreter.execute(root);
-
-                    System.out.println("\n[Interpreter] Execution finished successfully.");
-                } catch (Exception e) {
-                    System.err.println("\n[Interpreter] Execution halted due to an error: " + e.getMessage());
+                    System.out.println("[Interpreter] Execution finished successfully.");
+                } catch (InterpreterException e) {
+                    System.out.println("[Semantic Error] " + e.getMessage());
+                    return; // STOP EXECUTION HERE
                 }
 
                 System.out.println("\n=============================================");

@@ -234,7 +234,9 @@ public class Scanner {
                 break;
         }
 
-        if (result != null) return result;
+        if (result != null) {
+            return result;
+        }
 
         return new Token(TokenType.ILLEGAL, "Unknown Error", line);
     }
@@ -335,18 +337,16 @@ public class Scanner {
 
         String text = sourceCode.substring(startPos, currentPos);
 
-        // Lexical Error for exceeding maximum length (256 char)
         if (text.length() > 256) {
             return new Token(TokenType.ILLEGAL, "Identifier exceeds maximum length of 256 characters", line);
         }
 
-        TokenType type = keywords.getOrDefault(text, TokenType.IDENTIFIER);
+        TokenType type = keywords.getOrDefault(text.toLowerCase(), TokenType.IDENTIFIER);
 
         if (type == TokenType.IDENTIFIER) {
             symTable.addLexeme(text);
         } else if (type == TokenType.TRUE || type == TokenType.FALSE) {
-            // Boolean literals
-            return new Literal(type, text, Boolean.parseBoolean(text), line);
+            return new Literal(type, text, Boolean.parseBoolean(text.toLowerCase()), line);
         }
 
         return new Token(type, text, line);
@@ -477,7 +477,6 @@ public class Scanner {
             String badText = sourceCode.substring(startPos, currentPos);
             return new Token(TokenType.ILLEGAL, "Unterminated neuron (character) literal '" + badText + "'", line);
         }
-
 
         if (ch == '\\') {
             // q1 to q3
