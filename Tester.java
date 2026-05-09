@@ -13,7 +13,7 @@ public class Tester {
         String logPath = "Misc/parser_log.txt";
         String astPath = "Misc/ast_tree.txt";
         String csvPath = "Misc/LR1_Parsing_Table.csv";
-        String inputPath = "Sample Programs/error_free.txt";
+        String inputPath = "Sample Programs/semantic_errors.txt";
 
         try (PrintWriter logWriter = new PrintWriter(new File(logPath))) {
             ParseTable table = TableLoader.load(csvPath);
@@ -34,8 +34,6 @@ public class Tester {
             ASTNode root = parser.parse();
 
             if (root != null) {
-                // UI Window
-                new TreeScrollFrame(convertToGrtree(root));
 
                 // Export final AST Structure
                 String treeContent = exportToGtreeFormat(root);
@@ -44,32 +42,26 @@ public class Tester {
                 System.out.println("[Success] Parsing complete.");
                 System.out.println("[Success] Action Log: " + logPath);
                 System.out.println("[Success] AST Tree: " + astPath);
-            }
 
-            
-            // ... your existing code ...
-            // ASTNode root = parser.parse(); // (However you currently get the root)
-            
-            if (root != null) {
                 System.out.println("\n=============================================");
                 System.out.println("   PHASE IV: CEREBRA INTERPRETER STARTING    ");
                 System.out.println("=============================================\n");
 
                 // 1. Initialize the global memory
                 SymTable globalMemory = new SymTable();
-                
+
                 // 2. Initialize the interpreter with that memory
                 Interpreter interpreter = new Interpreter(globalMemory);
 
-                // --- ADD THIS TO TAKE AN X-RAY OF THE AST ---
+                // --- AST STRUCTURE ---
                 System.out.println("--- AST STRUCTURE ---");
                 root.display("");
                 System.out.println("---------------------");
 
                 try {
-                    // 3. Execute the program!
+                    // 3. Execute the program
                     interpreter.execute(root);
-                    
+
                     System.out.println("\n[Interpreter] Execution finished successfully.");
                 } catch (Exception e) {
                     System.err.println("\n[Interpreter] Execution halted due to an error: " + e.getMessage());
@@ -78,8 +70,17 @@ public class Tester {
                 System.out.println("\n=============================================");
                 System.out.println("        FINAL STATE OF SYMBOL TABLE          ");
                 System.out.println("=============================================");
-                // 4. Print the final memory state to satisfy the professor's requirement
+
+                // 4. Print final symbol table
                 globalMemory.displayTable();
+
+                // =========================
+                // SHOW GTREE LAST
+                // =========================
+                System.out.println("\n[Visualizer] Opening GTree AST Viewer...");
+
+                new TreeScrollFrame(convertToGrtree(root));
+
             } else {
                 System.err.println("Parser failed to generate an AST. Cannot run Interpreter.");
             }

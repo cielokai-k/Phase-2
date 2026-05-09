@@ -1,0 +1,39 @@
+pulse i = 0;
+
+express("=== NESTED LOOP TEST ===");
+
+cycle(i < 3) {
+
+    pulse j = 0;
+
+    echo(j = 0; j < 2; j++) {
+
+        if (i == 1 && j == 1) {
+            express("Special Case Triggered");
+        }
+        else {
+            express(i + j);
+        }
+
+    }
+
+    i++;
+}
+
+express("=== SWITCH TEST ===");
+
+pulse value = 2;
+
+switch(value) {
+
+    case 1:
+        express("One");
+        dormant;
+
+    case 2:
+        express("Two");
+        dormant;
+
+    default:
+        express("Unknown");
+}

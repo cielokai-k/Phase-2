@@ -1,0 +1,32 @@
+action pulse divide(pulse x, pulse y) {
+
+    recall x / y;
+
+}
+
+activate {
+
+    express("=== SEMANTIC ERROR TESTS ===");
+
+    pulse a = 10;
+    pulse b = 0;
+
+    express(a / b);
+
+    thought text = "hello";
+
+    pulse x = text - 5;
+
+    instinct pulse constantValue = 100;
+
+    constantValue = 200;
+
+    express(unknownVar);
+
+    pulse CLUSTER nums[3] = {1, 2, 3};
+
+    express(nums[10]);
+
+    pulse result = divide(5, 0);
+
+}

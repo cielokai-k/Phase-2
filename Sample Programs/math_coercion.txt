@@ -1,0 +1,32 @@
+activate {
+
+    pulse a = 10;
+    spark b = 2.5;
+    stream c = 3.14159;
+
+    EXPRESS("=== MATH OPERATIONS ===");
+
+    EXPRESS(a + 5);
+    EXPRESS(a + b);
+    EXPRESS(c * 2);
+    EXPRESS(a / 2);
+    EXPRESS(a % 3);
+    EXPRESS(a ** 2);
+
+    EXPRESS("=== TYPE COERCION ===");
+
+    pulse whole;
+    whole = 8.9;
+
+    EXPRESS(whole);
+
+    synapse flag;
+    flag = 1;
+
+    EXPRESS(flag);
+
+    thought text = "Hello";
+
+    EXPRESS(text + " World");
+
+}

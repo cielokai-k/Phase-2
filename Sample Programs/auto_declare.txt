@@ -1,0 +1,17 @@
+express("=== AUTO DECLARATION TEST ===");
+
+x = 10;
+y = 5.5;
+name = "Kamome";
+flag = true;
+
+express(x);
+express(y);
+express(name);
+express(flag);
+
+x += 5;
+express(x);
+
+name = name + " Kushima";
+express(name);

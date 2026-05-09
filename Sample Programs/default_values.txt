@@ -1,0 +1,19 @@
+activate {
+
+    pulse count;
+    spark temperature;
+    stream gravity;
+    synapse ready;
+    neuron letter;
+    thought message;
+
+    EXPRESS("=== DEFAULT VALUES ===");
+
+    EXPRESS(count);
+    EXPRESS(temperature);
+    EXPRESS(gravity);
+    EXPRESS(ready);
+    EXPRESS(letter);
+    EXPRESS(message);
+
+}
