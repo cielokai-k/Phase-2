@@ -19,6 +19,10 @@ public class Parser {
         this.logWriter = logWriter;
     }
 
+    public boolean hasErrors() {
+        return errorOccurred;
+    }
+
     public ASTNode parse() {
         stateStack.push(0);
         Token lookahead = scanner.getNextToken();

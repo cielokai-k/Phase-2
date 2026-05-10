@@ -33,6 +33,11 @@ public class Tester {
             Parser parser = new Parser(scannerForParsing, table, logWriter);
             ASTNode root = parser.parse();
 
+            if (parser.hasErrors()) {
+                System.out.println("[Interpreter] Execution skipped due to syntax errors.");
+                return;
+            }
+
             if (root != null) {
 
                 // Export final AST Structure

@@ -311,6 +311,7 @@ public class Interpreter {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     private Object handleAssignment(List<ASTNode> children) {
         // Check if this is an array element assignment
         ASTNode leftSide = children.get(0);
@@ -458,6 +459,7 @@ public class Interpreter {
         }
 
         symTable.setValue(varName, exprValue);
+        symTable.markAsInitialized(varName);
         return null;
     }
 
@@ -548,7 +550,7 @@ public class Interpreter {
         }
 
         Object currentVal = symTable.getValue(postVar);
-        if (currentVal == null) {
+        if (!symTable.isInitialized(postVar)) {
             throw new InterpreterException(
                     "Line " + currentLine + ": Cannot apply postfix operator '" + postOp + "' to uninitialized variable '" + postVar + "'",
                     currentLine
@@ -991,6 +993,7 @@ public class Interpreter {
                 try {
                     Object val = evaluateNode(nt.children.get(2));
                     symTable.setValue(varName, val);
+                    symTable.markAsInitialized(varName);
                 } catch (Exception e) {
 
                     String msg = e.getMessage();
@@ -1374,9 +1377,7 @@ public class Interpreter {
         if (node instanceof NonTerminalNode) {
             NonTerminalNode nt = (NonTerminalNode) node;
             if (nt.name.equals("PARAM_ITEM")) {
-                // From debug output, two forms exist:
-                // Cluster param: [0]=CLUSTER(terminal) [1]=DATA_TYPE(nonterminal) [2]=ID(terminal) [3]=[ [4]=]
-                // Plain param:   [0]=DATA_TYPE(nonterminal) [1]=ID(terminal)
+
                 boolean isCluster = nt.children.get(0) instanceof TerminalNode
                         && extractLexeme(nt.children.get(0)).equalsIgnoreCase("cluster");
 

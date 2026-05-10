@@ -11,6 +11,17 @@ public class SymTable {
         table = new HashMap<>();
     }
 
+    private Map<String, Boolean> initialized = new HashMap<>();
+
+    // Method to track initialized/default variables
+    public void markAsInitialized(String lexeme) {
+        initialized.put(lexeme, true);
+    }
+
+    public boolean isInitialized(String lexeme) {
+        return initialized.getOrDefault(lexeme, false);
+    }
+
     // Method that will add identifier if missing
     public void addLexeme(String lexeme) {
         if (!table.containsKey(lexeme)) {
@@ -66,7 +77,7 @@ public class SymTable {
         }
         return null;
     }
-    
+
     // Checks if a variable actually exists in the table
     public boolean contains(String lexeme) {
         return table.containsKey(lexeme);
@@ -77,9 +88,9 @@ public class SymTable {
         System.out.println("--- SYMBOL TABLE ---");
         for (String key : table.keySet()) {
             IdDetails details = table.get(key);
-            System.out.println("ID: " + key + 
-                               " | Type: " + details.dataType + 
-                               " | Value: " + details.value);
+            System.out.println("ID: " + key
+                    + " | Type: " + details.dataType
+                    + " | Value: " + details.value);
         }
         System.out.println("--------------------");
     }
@@ -100,4 +111,3 @@ class IdDetails {
         this.type = type;
     }
 }
-
