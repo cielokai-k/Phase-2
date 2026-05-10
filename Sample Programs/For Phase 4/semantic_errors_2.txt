@@ -65,9 +65,7 @@ activate {
 
 
 dream: ==========================================
-dream: 6. RETURN TYPE MISMATCH (BUG TO BE FIXED)
-dream: Expected: Semantic Error before runtime.
-dream: Actual: Throws Java Runtime error - CEREBRA_RETURN
+dream: 6. RETURN TYPE MISMATCH (CAUGHT)
 dream: ==========================================
 action pulse getStatus() {
     dream: Returning a 'thought' (string) when the subroutine demands a 'pulse' (int)
@@ -80,9 +78,7 @@ activate {
 
 
 dream: ==========================================
-dream: 7. IMPLICIT CONCATENATION (BUG TO BE FIXED)
-dream: Expected: Semantic Error for missing transcribe() cast.
-dream: Actual: Interpreter ignores spec and successfully concatenates.
+dream: 7. IMPLICIT CONCATENATION (CAUGHT)
 dream: ==========================================
 activate {
     thought label = "Total Points: ";
@@ -94,9 +90,7 @@ activate {
 
 
 dream: ==========================================
-dream: 8. DUPLICATE 'PATH' & 'DORMANT' (BUG TO BE FIXED)
-dream: Expected: Semantic error for duplicate "path 1".
-dream: Actual: Prints "First path", then crashes on 'dormant'.
+dream: 8. DUPLICATE 'PATH' & 'DORMANT' (CAUGHT)
 dream: ==========================================
 activate {
     pulse evaluateCheck = 1;
