@@ -99,6 +99,26 @@ public class Interpreter {
                     case "UNARY_EXPR":
                         return handleUnaryExpression(children);
 
+                    case "FACTOR":
+                        for (ASTNode child : children) {
+                            if (isEpsilon(child)) {
+                                continue;
+                            }
+                            if (child instanceof TerminalNode) {
+                                String lex = ((TerminalNode) child).token.lexeme;
+                                if (lex.equals("(") || lex.equals(")")
+                                        || lex.equals("[") || lex.equals("]")) {
+                                    continue;
+                                }
+                            }
+                            Object result = evaluateNode(child);
+                            if (result != null && !(result instanceof String
+                                    && (result.equals("(") || result.equals(")")))) {
+                                return result;
+                            }
+                        }
+                        return null;
+
                     // =========================================================
                     // 5. RELATIONAL & LOGICAL
                     // =========================================================
@@ -165,14 +185,12 @@ public class Interpreter {
             }
         } catch (InterpreterException e) {
 
-            // Already formatted properly
             throw e;
 
         } catch (RuntimeException e) {
 
             String msg = e.getMessage();
 
-            // Control-flow misuse messages
             if ("CEREBRA_DORMANT".equals(msg)) {
                 throw new InterpreterException(
                         "Invalid use of 'dormant'. "
@@ -190,11 +208,7 @@ public class Interpreter {
             }
 
             if (msg != null && msg.startsWith("CEREBRA_RETURN:")) {
-                throw new InterpreterException(
-                        "Invalid use of 'recall'. "
-                        + "'recall' may only appear inside a subroutine.",
-                        currentLine
-                );
+                throw e;
             }
 
             // Prevent duplicate wrapping
@@ -207,7 +221,6 @@ public class Interpreter {
                     currentLine,
                     e
             );
-
         } catch (Exception e) {
 
             String msg = e.getMessage();
@@ -276,16 +289,6 @@ public class Interpreter {
     private Object handleVariableDeclaration(List<ASTNode> children) {
         String declDataType = extractLexeme(children.get(0));
 
-        // FIX 3: ID_DECL has two forms in the grammar:
-        //   (a) DATA_TYPE CLUSTER CLUSTER_LIST SEMICOLON  → cluster declaration
-        //   (b) DATA_TYPE ID_LIST SEMICOLON               → plain variable declaration
-        //
-        // The parser emits both as ID_DECL nodes. Detect the cluster form by checking
-        // whether child[1] is the CLUSTER keyword token, and delegate accordingly.
-        // Without this check, cluster declarations silently matched nothing (no ID_LIST
-        // child found), the variable was never stored, and all subsequent statements
-        // that referenced it were dropped by parser error recovery — making divide-by-zero
-        // and array-out-of-bounds unreachable by the interpreter entirely.
         if (children.size() >= 3 && extractLexeme(children.get(1)).equalsIgnoreCase("cluster")) {
             evaluateCluster(declDataType, children.get(2));
             return null;
@@ -716,13 +719,6 @@ public class Interpreter {
             mapParameters(funcChildren.get(4), args);
             evaluateNode(funcChildren.get(7));
         } catch (RuntimeException e) {
-            // FIX 4: Check InterpreterException FIRST before CEREBRA_RETURN.
-            // Previously the order was reversed: CEREBRA_RETURN was checked first,
-            // which meant an InterpreterException (e.g. divide-by-zero thrown inside
-            // performMath) whose message didn't start with "CEREBRA_RETURN:" fell
-            // through to the generic re-wrap, losing the original error context.
-            // Now InterpreterException is always re-thrown immediately, preserving
-            // the exact line number and message from where the error originated.
             if (e instanceof InterpreterException) {
                 throw e;
             }
@@ -859,8 +855,12 @@ public class Interpreter {
     private Object extractTerminalValue(ASTNode node) {
         if (node instanceof TerminalNode) {
             String text = ((TerminalNode) node).token.lexeme;
+
             if (text.startsWith("\"") && text.endsWith("\"")) {
-                text = text.substring(1, text.length() - 1);
+                return text.substring(1, text.length() - 1);
+            }
+            if (text.contains("thought_lit:")) {
+                return text.replace("thought_lit:", "").trim();
             }
             if (text.equals("true")) {
                 return true;
@@ -868,15 +868,21 @@ public class Interpreter {
             if (text.equals("false")) {
                 return false;
             }
-            if (text.contains("thought_lit")) {
-                return text.replace("thought_lit:", "").trim();
+
+            // Strip type prefix
+            String numeric = text;
+            if (text.contains(":")) {
+                numeric = text.substring(text.lastIndexOf(":") + 1).trim();
             }
+            numeric = numeric.replaceAll("[\\[\\]]", "").replace("ID:", "").trim();
+
             try {
-                if (text.contains(".")) {
-                    return Float.parseFloat(text);
+                if (numeric.contains(".")) {
+                    return Float.parseFloat(numeric);
                 }
-                return Integer.parseInt(text);
+                return Integer.parseInt(numeric);
             } catch (Exception e) {
+                // Not a number — return original text cleaned up
                 return text.replaceAll("[\\[\\]]", "").replace("ID:", "").trim();
             }
         }
@@ -1036,12 +1042,14 @@ public class Interpreter {
     }
 
     private void processClusterItem(ASTNode itemNode, java.util.List<Object> arrayData) {
-        if (itemNode instanceof NonTerminalNode && ((NonTerminalNode) itemNode).name.trim().equals("1D_INIT")) {
+        if (itemNode instanceof NonTerminalNode
+                && ((NonTerminalNode) itemNode).name.trim().equals("1D_INIT")) {
             java.util.List<Object> subList = new java.util.ArrayList<>();
             extractClusterValues(((NonTerminalNode) itemNode).children.get(1), subList);
             arrayData.add(subList);
         } else {
-            arrayData.add(evaluateNode(itemNode));
+            Object val = evaluateNode(itemNode);
+            arrayData.add(val);
         }
     }
 
@@ -1271,14 +1279,19 @@ public class Interpreter {
 
         if (paramNames.size() != args.size()) {
             throw new InterpreterException(
-                    "Line " + currentLine + ": Subroutine parameter mismatch. Expected " + paramNames.size() + " arguments but got " + args.size(),
+                    "Line " + currentLine + ": Subroutine parameter mismatch. Expected "
+                    + paramNames.size() + " arguments but got " + args.size(),
                     currentLine
             );
         }
 
-        for (int i = 0; i < Math.min(paramNames.size(), args.size()); i++) {
+        for (int i = 0; i < paramNames.size(); i++) {
             String pName = paramNames.get(i);
-            symTable.addLexeme(pName);
+            if (!symTable.contains(pName)) {
+                symTable.addLexeme(pName);
+            }
+            // Infer and set the type so the variable is fully registered
+            symTable.setDataType(pName, inferCerebraType(args.get(i)));
             symTable.setValue(pName, args.get(i));
         }
     }
@@ -1287,7 +1300,19 @@ public class Interpreter {
         if (node instanceof NonTerminalNode) {
             NonTerminalNode nt = (NonTerminalNode) node;
             if (nt.name.equals("PARAM_ITEM")) {
-                params.add(extractLexeme(nt.children.get(1)));
+                // From debug output, two forms exist:
+                // Cluster param: [0]=CLUSTER(terminal) [1]=DATA_TYPE(nonterminal) [2]=ID(terminal) [3]=[ [4]=]
+                // Plain param:   [0]=DATA_TYPE(nonterminal) [1]=ID(terminal)
+                boolean isCluster = nt.children.get(0) instanceof TerminalNode
+                        && extractLexeme(nt.children.get(0)).equalsIgnoreCase("cluster");
+
+                String paramName = isCluster
+                        ? extractLexeme(nt.children.get(2))
+                        : extractLexeme(nt.children.get(1));
+
+                if (!paramName.isEmpty()) {
+                    params.add(paramName);
+                }
             } else {
                 for (ASTNode child : nt.children) {
                     extractParamNames(child, params);
