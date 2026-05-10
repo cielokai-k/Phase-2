@@ -1,61 +1,49 @@
 dream {
-math_and_coercion.txt – Demonstrate automatic
-type conversion (coercion) during arithmetic.
-Also tests that string concatenation works only
-when both operands are thought, otherwise requires
-transcribe(). }
+coercion_math.txt – Test automatic type conversion (coercion) during
+arithmetic operations and assignments. }
 
 activate {
-    dream: /// Basic numeric coercion ///
-    pulse   p = 5;
+    dream: ----- setup values -----
+    pulse   p = 10;
     spark   s = 3.5f;
     stream  d = 2.0;
-
-    dream: Mixed pulse + spark -> result is spark (float)
-    spark mix1 = p + s;
-    express("pulse + spark = spark: " + transcribe(mix1));
-
-    dream: spark + stream -> stream (double)
-    stream mix2 = s + d;
-    express("spark + stream = stream: " + transcribe(mix2));
-
-    dream: pulse + stream -> stream
-    stream mix3 = p + d;
-    express("pulse + stream = stream: " + transcribe(mix3));
-
-    dream: /// Compound assignment coercion ///
-    p += s;  // p is pulse, s is spark -> p becomes float? Interpreter will coerce
-    express("p after += spark (auto cast): " + transcribe(p));
-
-    dream: /// Boolean coercion in arithmetic (true=1, false=0) ///
     synapse flag = true;
-    pulse boolean_to_int = flag + 5;
-    express("true + 5 = " + transcribe(boolean_to_int));
 
-    synapse flag2 = false;
-    pulse boolean_to_int2 = flag2 + 5;
-    express("false + 5 = " + transcribe(boolean_to_int2));
+    dream: ----- mixed-type addition -----
+    spark mix1 = p + s;                // pulse + spark -> spark
+    express("10(pulse) + 3.5(spark) = spark: " + transcribe(mix1));
 
-    dream: /// String concatenation (must be both thought) ///
+    stream mix2 = s + d;               // spark + stream -> stream
+    express("3.5(spark) + 2.0(stream) = stream: " + transcribe(mix2));
+
+    stream mix3 = p + d;               // pulse + stream -> stream
+    express("10(pulse) + 2.0(stream) = stream: " + transcribe(mix3));
+
+    dream: ----- compound assignment with coercion -----
+    p += s;                            // pulse gets float value -> auto coerced
+    express("p after += 3.5 : " + transcribe(p));
+
+    dream: ----- boolean to numeric (true=1, false=0) -----
+    pulse plus_true = flag + 5;
+    express("true + 5 = " + transcribe(plus_true));
+
+    pulse plus_false = (false) + 5;
+    express("false + 5 = " + transcribe(plus_false));
+
+    dream: ----- string concatenation (both thought) -----
     thought hello = "Hello";
     thought world = "World";
     thought greeting = hello + " " + world;
-    express("Concatenated: " + greeting);
+    express("Concatenation: " + greeting);
 
-    dream:  /// Coercion in relational operators ///
+    dream: ----- relational coercion -----
     stimulate (p > s) {
-        express("p > s after coercion is true");
+        express("p > s is true after coercion.");
     } inhibit {
-        express("p > s after coercion is false");
+        express("p > s is false.");
     }
 
-    dream: === Uninitialized variable gets default value (0) and used ===
-    pulse uninitialized;
-    pulse sum = uninitialized + 10;
-    express("uninitialized (default 0) + 10 = " + transcribe(sum));
-
-    dream: === Auto-declaration on assignment (optional feature) ===
-    // 'autoVar' was never declared, but interpreter creates it as a thought (string)
-    autoVar = "This was auto-declared!";
+    dream: ----- auto‑declaration on assignment (optional feature) -----
+    autoVar = "This is born on assignment!";
     express(autoVar);
 }
