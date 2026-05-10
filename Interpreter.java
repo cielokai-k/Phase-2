@@ -312,6 +312,80 @@ public class Interpreter {
     }
 
     private Object handleAssignment(List<ASTNode> children) {
+        // Check if this is an array element assignment
+        ASTNode leftSide = children.get(0);
+
+        if (leftSide instanceof NonTerminalNode
+                && ((NonTerminalNode) leftSide).name.trim().equals("VARIABLE_ACCESS")) {
+
+            List<ASTNode> accessChildren = ((NonTerminalNode) leftSide).children;
+
+            if (accessChildren.size() >= 4) {
+                String arrayName = extractLexeme(accessChildren.get(0));
+                Object indexObj;
+
+                try {
+                    indexObj = evaluateNode(accessChildren.get(2));
+                } catch (Exception e) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Error evaluating array index - " + e.getMessage(),
+                            currentLine,
+                            e
+                    );
+                }
+
+                // VALIDATE INDEX IS NUMERIC
+                int index;
+                try {
+                    index = (int) Double.parseDouble(indexObj.toString());
+                } catch (Exception e) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Array index must be numeric, got: " + indexObj,
+                            currentLine,
+                            e
+                    );
+                }
+
+                if (!symTable.contains(arrayName)) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Array '" + arrayName + "' has not been declared",
+                            currentLine
+                    );
+                }
+
+                Object arrayObj = symTable.getValue(arrayName);
+                if (!(arrayObj instanceof java.util.List)) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Cannot use array indexing on non-cluster type",
+                            currentLine
+                    );
+                }
+
+                java.util.List<Object> list = (java.util.List<Object>) arrayObj;
+
+                if (index < 0 || index >= list.size()) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Array index out of bounds. Index: " + index + ", Array size: " + list.size(),
+                            currentLine
+                    );
+                }
+
+                Object exprValue;
+                try {
+                    exprValue = evaluateNode(children.get(2));
+                } catch (Exception e) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Error evaluating expression - " + e.getMessage(),
+                            currentLine,
+                            e
+                    );
+                }
+
+                list.set(index, exprValue);
+                return null;
+            }
+        }
+
         String varName = extractLexeme(children.get(0));
         String assignOp = extractLexeme(children.get(1)).toUpperCase();
         Object exprValue;
