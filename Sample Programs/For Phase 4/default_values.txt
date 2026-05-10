@@ -1,0 +1,32 @@
+dream {
+default_values.txt – Show default values for every Cerebra data type
+Variables declared without initialisation get type-specific defaults. }
+
+activate {
+    dream: ----- primitive declarations without init -----
+    pulse   def_pulse;
+    spark   def_spark;
+    stream  def_stream;
+    synapse def_synapse;
+    neuron  def_neuron;
+    thought def_thought;
+
+    dream: ----- output defaults -----
+    express("=== DEFAULT VALUES ===");
+    express("pulse   (integer)  : " + transcribe(def_pulse));
+    express("spark   (float)    : " + transcribe(def_spark));
+    express("stream  (double)   : " + transcribe(def_stream));
+    express("synapse (boolean)  : " + transcribe(def_synapse));
+    express("neuron  (char)     : " + transcribe(def_neuron));
+    express("thought (string)   : " + transcribe(def_thought));
+
+    dream: ----- defaults used in expressions -----
+    pulse default_sum = def_pulse + 5;
+    express("Default 0 + 5 = " + transcribe(default_sum));
+
+    stimulate (def_synapse == false) {
+        express("Default synapse is false (good).");
+    } inhibit {
+        express("Unexpected: default synapse true.");
+    }
+}

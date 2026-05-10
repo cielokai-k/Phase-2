@@ -1,0 +1,61 @@
+dream {
+math_and_coercion.txt – Demonstrate automatic
+type conversion (coercion) during arithmetic.
+Also tests that string concatenation works only
+when both operands are thought, otherwise requires
+transcribe(). }
+
+activate {
+    dream: /// Basic numeric coercion ///
+    pulse   p = 5;
+    spark   s = 3.5f;
+    stream  d = 2.0;
+
+    dream: Mixed pulse + spark -> result is spark (float)
+    spark mix1 = p + s;
+    express("pulse + spark = spark: " + transcribe(mix1));
+
+    dream: spark + stream -> stream (double)
+    stream mix2 = s + d;
+    express("spark + stream = stream: " + transcribe(mix2));
+
+    dream: pulse + stream -> stream
+    stream mix3 = p + d;
+    express("pulse + stream = stream: " + transcribe(mix3));
+
+    dream: /// Compound assignment coercion ///
+    p += s;  // p is pulse, s is spark -> p becomes float? Interpreter will coerce
+    express("p after += spark (auto cast): " + transcribe(p));
+
+    dream: /// Boolean coercion in arithmetic (true=1, false=0) ///
+    synapse flag = true;
+    pulse boolean_to_int = flag + 5;
+    express("true + 5 = " + transcribe(boolean_to_int));
+
+    synapse flag2 = false;
+    pulse boolean_to_int2 = flag2 + 5;
+    express("false + 5 = " + transcribe(boolean_to_int2));
+
+    dream: /// String concatenation (must be both thought) ///
+    thought hello = "Hello";
+    thought world = "World";
+    thought greeting = hello + " " + world;
+    express("Concatenated: " + greeting);
+
+    dream:  /// Coercion in relational operators ///
+    stimulate (p > s) {
+        express("p > s after coercion is true");
+    } inhibit {
+        express("p > s after coercion is false");
+    }
+
+    dream: === Uninitialized variable gets default value (0) and used ===
+    pulse uninitialized;
+    pulse sum = uninitialized + 10;
+    express("uninitialized (default 0) + 10 = " + transcribe(sum));
+
+    dream: === Auto-declaration on assignment (optional feature) ===
+    // 'autoVar' was never declared, but interpreter creates it as a thought (string)
+    autoVar = "This was auto-declared!";
+    express(autoVar);
+}

@@ -1,0 +1,105 @@
+dream {
+control_flow_nested.txt – Demonstrate nested
+control flow: stimulate inside stimulate,
+cycle inside echo, nested evaluate, etc. }
+
+activate {
+    dream: /// Nested stimulate (if-else) ///
+    pulse age = 25;
+    synapse hasLicense = true;
+
+    stimulate (age >= 18) {
+        express("Adult.");
+        stimulate (hasLicense) {
+            express("  Can drive.");
+        } inhibit {
+            express("  Cannot drive (no license).");
+        }
+    } inhibit {
+        express("Minor.");
+        stimulate (hasLicense) {
+            express("  Has license but underage.");
+        } inhibit {
+            express("  No license, too young.");
+        }
+    }
+
+    dream: /// Nested loops: cycle inside echo ///
+    pulse outer = 1;
+    echo (outer = 1; outer <= 3; outer++) {
+        express("Outer iteration: " + transcribe(outer));
+        pulse inner = 1;
+        cycle (inner <= outer) {
+            express("  Inner: " + transcribe(inner));
+            inner++;
+        }
+    }
+
+    dream: /// Nested loops: echo inside react (do-while) ///
+    pulse row = 0;
+    react {
+        express("Row " + transcribe(row) + ":");
+        pulse col = 0;
+        cycle (col < row) {
+            express("  Col " + transcribe(col));
+            col++;
+        }
+        row++;
+    } cycle (row < 3);
+
+    dream: /// Nested evaluate (switch) inside a loop ///
+    pulse i = 1;
+    cycle (i <= 3) {
+        evaluate (i) {
+            path 1:
+                express("One: odd");
+                dormant;
+            path 2:
+                express("Two: even");
+                dormant;
+            path 3:
+                express("Three: odd");
+                dormant;
+            base:
+                express("Other");
+        }
+        i++;
+    }
+
+    dream: /// Flow (continue) inside nested stimulate ///
+    pulse k = 0;
+    cycle (k < 5) {
+        k++;
+        stimulate (k == 2) {
+            flow;  // skip printing 2
+        }
+        stimulate (k == 4) {
+            express("Almost done");
+        }
+        express("k = " + transcribe(k));
+    }
+
+    dream: /// Dormant (break) inside nested loops ///
+    pulse found = 0;
+    pulse search = 1;
+    cycle (search <= 10) {
+        pulse divisor = 2;
+        synapse isPrime = true;
+        cycle (divisor < search) {
+            stimulate (search % divisor == 0) {
+                isPrime = false;
+                dormant;   // break out of inner cycle
+            }
+            divisor++;
+        }
+        stimulate (isPrime) {
+            express(transcribe(search) + " is prime.");
+            found++;
+            stimulate (found == 3) {
+                dormant;   // break outer loop after 3 primes
+            }
+        }
+        search++;
+    }
+    express("Found " + transcribe(found) + " primes.");
+}
