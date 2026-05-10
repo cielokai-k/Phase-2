@@ -20,7 +20,7 @@ activate {
     express("10(pulse) + 2.0(stream) = stream: " + transcribe(mix3));
 
     dream: ----- compound assignment with coercion -----
-    p += s;                            // pulse gets float value → auto coerced
+    p += s;                            // pulse gets float value -> auto coerced
     express("p after += 3.5 : " + transcribe(p));
 
     dream: ----- boolean to numeric (true=1, false=0) -----
@@ -44,6 +44,6 @@ activate {
     }
 
     dream: ----- auto‑declaration on assignment (optional feature) -----
-    autoVar = "I was born on assignment!";
+    autoVar = "This is born on assignment!";
     express(autoVar);
 }
