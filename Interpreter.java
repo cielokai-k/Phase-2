@@ -164,11 +164,64 @@ public class Interpreter {
                 return extractTerminalValue(node);
             }
         } catch (InterpreterException e) {
-            // Already has line info, rethrow
+
+            // Already formatted properly
             throw e;
+
+        } catch (RuntimeException e) {
+
+            String msg = e.getMessage();
+
+            // Control-flow misuse messages
+            if ("CEREBRA_DORMANT".equals(msg)) {
+                throw new InterpreterException(
+                        "Invalid use of 'dormant'. "
+                        + "'dormant' may only appear inside a valid evaluate/path block.",
+                        currentLine
+                );
+            }
+
+            if ("CEREBRA_FLOW".equals(msg)) {
+                throw new InterpreterException(
+                        "Invalid use of 'flow'. "
+                        + "'flow' may only appear inside a loop.",
+                        currentLine
+                );
+            }
+
+            if (msg != null && msg.startsWith("CEREBRA_RETURN:")) {
+                throw new InterpreterException(
+                        "Invalid use of 'recall'. "
+                        + "'recall' may only appear inside a subroutine.",
+                        currentLine
+                );
+            }
+
+            // Prevent duplicate wrapping
+            if (msg != null && msg.startsWith("Line ")) {
+                throw e;
+            }
+
+            throw new InterpreterException(
+                    "Runtime error - " + msg,
+                    currentLine,
+                    e
+            );
+
         } catch (Exception e) {
-            // Wrap with line info
-            throw new InterpreterException("Line " + currentLine + ": Runtime error - " + e.getMessage(), currentLine, e);
+
+            String msg = e.getMessage();
+
+            // Prevent duplicate wrapping
+            if (msg != null && msg.startsWith("Line ")) {
+                throw new InterpreterException(msg, currentLine, e);
+            }
+
+            throw new InterpreterException(
+                    "Runtime error - " + msg,
+                    currentLine,
+                    e
+            );
         }
     }
 
@@ -859,8 +912,48 @@ public class Interpreter {
                     Object val = evaluateNode(nt.children.get(2));
                     symTable.setValue(varName, val);
                 } catch (Exception e) {
+
+                    String msg = e.getMessage();
+
+                    // Detect invalid return usage / return mismatch
+                    if (msg != null && msg.contains("Variable 'return' has not been declared")) {
+
+                        String expectedType = dataType;
+
+                        // Try getting actual returned type from cause/message
+                        String actualType = "unknown";
+
+                        Throwable cause = e.getCause();
+
+                        if (cause != null && cause.getMessage() != null) {
+
+                            String causeMsg = cause.getMessage();
+
+                            if (causeMsg.contains("thought_lit") || causeMsg.contains("\"")) {
+                                actualType = "thought";
+                            } else if (causeMsg.matches(".*\\d+.*")) {
+                                actualType = "pulse";
+                            } else if (causeMsg.equalsIgnoreCase("true")
+                                    || causeMsg.equalsIgnoreCase("false")) {
+                                actualType = "synapse";
+                            }
+                        }
+
+                        throw new InterpreterException(
+                                "Line " + currentLine
+                                + ": Return type mismatch. Expected '"
+                                + expectedType
+                                + "' but got '"
+                                + actualType + "'.",
+                                currentLine
+                        );
+                    }
+
                     throw new InterpreterException(
-                            "Line " + currentLine + ": Error initializing variable '" + varName + "' - " + e.getMessage(),
+                            "Line " + currentLine
+                            + ": Error initializing variable '"
+                            + varName
+                            + "' - " + msg,
                             currentLine,
                             e
                     );
@@ -953,29 +1046,68 @@ public class Interpreter {
     }
 
     private boolean evaluateCases(Object targetValue, ASTNode node) {
-        if (node instanceof NonTerminalNode) {
-            NonTerminalNode nt = (NonTerminalNode) node;
-            String name = nt.name.toUpperCase().trim();
-            if (name.equals("CASE_LIST") || name.equals("CASE_TAIL")) {
-                for (ASTNode child : nt.children) {
-                    if (evaluateCases(targetValue, child)) {
-                        return true;
-                    }
-                }
-            } else if (name.equals("CASE_ITEM")) {
-                Object caseVal = evaluateNode(nt.children.get(1));
-                if (String.valueOf(targetValue).equals(String.valueOf(caseVal))) {
-                    try {
-                        evaluateNode(nt.children.get(3));
-                    } catch (RuntimeException e) {
-                        if (e.getMessage().equals("CEREBRA_DORMANT")) {
-                            return true;
-                        } else {
-                            throw e;
-                        }
-                    }
+        // First pass: collect all case values and check for duplicates
+        java.util.List<String> seenValues = new java.util.ArrayList<>();
+        collectAndValidateCaseValues(node, seenValues);
+
+        // Second pass: execute matching case
+        return executeCases(targetValue, node);
+    }
+
+    private void collectAndValidateCaseValues(ASTNode node, java.util.List<String> seenValues) {
+        if (!(node instanceof NonTerminalNode)) {
+            return;
+        }
+
+        NonTerminalNode nt = (NonTerminalNode) node;
+        String name = nt.name.toUpperCase().trim();
+
+        if (name.equals("CASE_LIST") || name.equals("CASE_TAIL")) {
+            for (ASTNode child : nt.children) {
+                collectAndValidateCaseValues(child, seenValues);
+            }
+        } else if (name.equals("CASE_ITEM")) {
+            Object caseVal = evaluateNode(nt.children.get(1));
+            String caseStr = String.valueOf(caseVal);
+
+            if (seenValues.contains(caseStr)) {
+                throw new InterpreterException(
+                        "Line " + currentLine + ": Semantic error - duplicate 'path " + caseStr + "' label detected. "
+                        + "Each path value in an 'evaluate' block must be unique.",
+                        currentLine
+                );
+            }
+            seenValues.add(caseStr);
+        }
+    }
+
+    private boolean executeCases(Object targetValue, ASTNode node) {
+        if (!(node instanceof NonTerminalNode)) {
+            return false;
+        }
+
+        NonTerminalNode nt = (NonTerminalNode) node;
+        String name = nt.name.toUpperCase().trim();
+
+        if (name.equals("CASE_LIST") || name.equals("CASE_TAIL")) {
+            for (ASTNode child : nt.children) {
+                if (executeCases(targetValue, child)) {
                     return true;
                 }
+            }
+        } else if (name.equals("CASE_ITEM")) {
+            Object caseVal = evaluateNode(nt.children.get(1));
+            if (String.valueOf(targetValue).equals(String.valueOf(caseVal))) {
+                try {
+                    evaluateNode(nt.children.get(3));
+                } catch (RuntimeException e) {
+                    if ("CEREBRA_DORMANT".equals(e.getMessage())) {
+                        return true;
+                    } else {
+                        throw e;
+                    }
+                }
+                return true;
             }
         }
         return false;
@@ -993,8 +1125,18 @@ public class Interpreter {
         String rStr = right.toString();
         String opClean = op.toUpperCase().trim();
 
-        if ((opClean.equals("+") || opClean.equals("PLUS")) && (left instanceof String || right instanceof String)) {
-            return lStr + " " + rStr;
+        if ((opClean.equals("+") || opClean.equals("PLUS"))
+                && (left instanceof String || right instanceof String)) {
+
+            if (!(left instanceof String && right instanceof String)) {
+                throw new InterpreterException(
+                        "Line " + currentLine
+                        + ": Type mismatch. Cannot concatenate 'thought' with numeric type without transcribe().",
+                        currentLine
+                );
+            }
+
+            return lStr + rStr;
         }
 
         try {
