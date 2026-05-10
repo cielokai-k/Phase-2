@@ -13,7 +13,7 @@ public class Tester {
         String logPath = "Misc/parser_log.txt";
         String astPath = "Misc/ast_tree.txt";
         String csvPath = "Misc/LR1_Parsing_Table.csv";
-        String inputPath = "Sample Programs/math_coercion.txt";
+        String inputPath = "Sample Programs/semantic_errors_2.txt";
 
         try (PrintWriter logWriter = new PrintWriter(new File(logPath))) {
             ParseTable table = TableLoader.load(csvPath);

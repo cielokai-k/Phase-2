@@ -1,0 +1,18 @@
+dream: Multiple Declarations and Type Coercion
+
+activate {
+    dream: Declaring multiple variables of the same type in one line
+    pulse x, y, z;
+    
+    x = 10;
+    y = 20;
+    
+    dream: Coercing a stream (float) into a pulse (integer)
+    z = 30.5;
+    
+    pulse sum = x + y + z;
+    
+    thought resultMsg = "Expected sum is 60. Actual sum is: ";
+    express(resultMsg);
+    express(sum);
+}
