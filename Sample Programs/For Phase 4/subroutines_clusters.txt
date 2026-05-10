@@ -1,3 +1,27 @@
+dream: Subroutines and Clusters
+dream: Optional features (Passing 1D arrays to functions and looping through them).
+
+
+action pulse getWeightedSum(cluster pulse data[], cluster pulse weights[], pulse size) {
+    pulse totalSum = 0;
+    pulse i;
+    
+    dream: Echo loop with pre-declared variable
+    echo (i = 0; i < size; i++) {
+        totalSum = totalSum + (data[i] * weights[i]);
+    }
+    
+    recall totalSum;
+}
+
 activate {
-    pulse x7 = true + 5;
+    dream: Declaring clusters using Cerebra's AST syntax
+    pulse cluster myData[3] = {10, 20, 30};
+    pulse cluster myWeights[3] = {2, 1, 3};
+    
+    pulse finalResult = getWeightedSum(myData, myWeights, 3);
+    
+    thought msg = "The weighted sum of the clusters is: ";
+    express(msg);
+    express(finalResult);
 }
