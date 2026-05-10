@@ -190,7 +190,11 @@ public class Interpreter {
         } catch (RuntimeException e) {
 
             String msg = e.getMessage();
-
+            if ("CEREBRA_DORMANT".equals(msg)
+                    || "CEREBRA_FLOW".equals(msg)
+                    || (msg != null && msg.startsWith("CEREBRA_RETURN:"))) {
+                throw e;
+            }
             if ("CEREBRA_DORMANT".equals(msg)) {
                 throw new InterpreterException(
                         "Invalid use of 'dormant'. "
@@ -198,7 +202,6 @@ public class Interpreter {
                         currentLine
                 );
             }
-
             if ("CEREBRA_FLOW".equals(msg)) {
                 throw new InterpreterException(
                         "Invalid use of 'flow'. "
@@ -206,16 +209,12 @@ public class Interpreter {
                         currentLine
                 );
             }
-
             if (msg != null && msg.startsWith("CEREBRA_RETURN:")) {
                 throw e;
             }
-
-            // Prevent duplicate wrapping
             if (msg != null && msg.startsWith("Line ")) {
                 throw e;
             }
-
             throw new InterpreterException(
                     "Runtime error - " + msg,
                     currentLine,
@@ -246,7 +245,7 @@ public class Interpreter {
         try {
             if (ioType.equals("express") || ioType.contains("express")) {
                 Object val = evaluateNode(children.get(2));
-                System.out.println(String.valueOf(val).replace("thought_lit:", "").trim());
+                System.out.println(String.valueOf(val).replace("thought_lit:", ""));
             } else if (ioType.equals("sense") || ioType.contains("sense")) {
                 String targetVar = extractLexeme(children.get(2));
                 if (!symTable.contains(targetVar)) {
@@ -648,15 +647,23 @@ public class Interpreter {
 
     private Object handleConditional(List<ASTNode> children) {
         Object condition = evaluateNode(children.get(2));
-        if (isTruthy(condition)) {
-            evaluateNode(children.get(5));
-        } else {
-            if (children.size() > 7 && children.get(7) instanceof NonTerminalNode) {
-                if (!((NonTerminalNode) children.get(7)).children.isEmpty()) {
-                    evaluateNode(children.get(7));
+
+        symTable.pushScope();
+        try {
+            if (isTruthy(condition)) {
+                evaluateNode(children.get(5));
+            } else {
+                if (children.size() > 7 && children.get(7) instanceof NonTerminalNode) {
+                    if (!((NonTerminalNode) children.get(7)).children.isEmpty()) {
+                        evaluateNode(children.get(7));
+                    }
                 }
             }
+        } catch (RuntimeException e) {
+            symTable.popScope();
+            throw e;
         }
+        symTable.popScope();
         return null;
     }
 
@@ -675,92 +682,120 @@ public class Interpreter {
 
     private Object handleLoop(List<ASTNode> children) {
         String loopKeyword = extractLexeme(children.get(0)).toLowerCase();
-        try {
-            // CYCLE loop (while)
-            if (loopKeyword.equals("cycle") || loopKeyword.contains("cycle")) {
-                int iterationCount = 0;
-                int maxIterations = 1000000; // Prevent infinite loops
 
-                while (isTruthy(evaluateNode(children.get(2)))) {
-                    if (++iterationCount > maxIterations) {
-                        throw new InterpreterException(
-                                "Line " + currentLine + ": Infinite loop detected in 'cycle' loop (exceeded " + maxIterations + " iterations)",
-                                currentLine
-                        );
+        // CYCLE loop (while)
+        if (loopKeyword.equals("cycle") || loopKeyword.contains("cycle")) {
+            int iterationCount = 0;
+            int maxIterations = 1000000;
+
+            while (isTruthy(evaluateNode(children.get(2)))) {
+                if (++iterationCount > maxIterations) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Infinite loop detected in 'cycle' loop (exceeded " + maxIterations + " iterations)",
+                            currentLine
+                    );
+                }
+
+                symTable.pushScope();
+                try {
+                    evaluateNode(children.get(5));
+                    symTable.popScope(); // Only pop if no exception
+                } catch (RuntimeException e) {
+                    symTable.popScope(); // Clean up scope on exception
+
+                    if ("CEREBRA_DORMANT".equals(e.getMessage())) {
+                        break;
                     }
-                    try {
+                    if ("CEREBRA_FLOW".equals(e.getMessage())) {
+                        continue;
+                    }
+                    // All other exceptions get rethrown
+                    throw e;
+                }
+            }
+            return null;
+        } // ECHO loop (for)
+        else if (loopKeyword.equals("echo") || loopKeyword.contains("echo")) {
+            evaluateNode(children.get(2)); // Initialization
+            int iterationCount = 0;
+            int maxIterations = 1000000;
+
+            while (isTruthy(evaluateNode(children.get(3)))) {
+                if (++iterationCount > maxIterations) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Infinite loop detected in 'echo' loop (exceeded " + maxIterations + " iterations)",
+                            currentLine
+                    );
+                }
+
+                symTable.pushScope();
+                try {
+                    evaluateNode(children.get(8));
+                    symTable.popScope(); // Only pop if no exception
+                } catch (RuntimeException innerE) {
+                    symTable.popScope(); // Clean up scope on exception
+
+                    if ("CEREBRA_DORMANT".equals(innerE.getMessage())) {
+                        break;
+                    }
+                    if ("CEREBRA_FLOW".equals(innerE.getMessage())) {
+
                         evaluateNode(children.get(5));
-                    } catch (RuntimeException e) {
-                        if (e.getMessage().startsWith("CEREBRA_")) {
-                            throw e;
-                        }
-                        throw new InterpreterException("Line " + currentLine + ": " + e.getMessage(), currentLine);
+                        continue;
+                    }
+                    throw innerE;
+                }
+                evaluateNode(children.get(5)); // Increment
+            }
+            return null;
+        } // REACT loop (do-while)
+        else if (loopKeyword.equals("react") || loopKeyword.contains("react")) {
+            ASTNode reactBody = null;
+            ASTNode reactCondition = null;
+            for (ASTNode c : children) {
+                if (c instanceof NonTerminalNode) {
+                    String nName = ((NonTerminalNode) c).name.trim().toUpperCase();
+                    if (nName.contains("LIST") || nName.equals("STATEMENT")) {
+                        reactBody = c;
+                    }
+                    if (nName.equals("EXPR")) {
+                        reactCondition = c;
                     }
                 }
-            } // ECHO loop (for)
-            else if (loopKeyword.equals("echo") || loopKeyword.contains("echo")) {
-                evaluateNode(children.get(2)); // Initialization
+            }
+
+            if (reactBody != null && reactCondition != null) {
                 int iterationCount = 0;
                 int maxIterations = 1000000;
 
-                while (isTruthy(evaluateNode(children.get(3)))) {
+                do {
                     if (++iterationCount > maxIterations) {
                         throw new InterpreterException(
-                                "Line " + currentLine + ": Infinite loop detected in 'echo' loop (exceeded " + maxIterations + " iterations)",
+                                "Line " + currentLine + ": Infinite loop detected in 'react' loop (exceeded " + maxIterations + " iterations)",
                                 currentLine
                         );
                     }
+
+                    symTable.pushScope();
                     try {
-                        evaluateNode(children.get(8));
+                        evaluateNode(reactBody);
+                        symTable.popScope(); // Only pop if no exception
                     } catch (RuntimeException innerE) {
-                        if (!innerE.getMessage().equals("CEREBRA_FLOW")) {
-                            throw innerE;
-                        }
-                    }
-                    evaluateNode(children.get(5));
-                }
-            } // REACT loop (do-while)
-            else if (loopKeyword.equals("react") || loopKeyword.contains("react")) {
-                ASTNode reactBody = null;
-                ASTNode reactCondition = null;
-                for (ASTNode c : children) {
-                    if (c instanceof NonTerminalNode) {
-                        String nName = ((NonTerminalNode) c).name.trim().toUpperCase();
-                        if (nName.contains("LIST") || nName.equals("STATEMENT")) {
-                            reactBody = c;
-                        }
-                        if (nName.equals("EXPR")) {
-                            reactCondition = c;
-                        }
-                    }
-                }
+                        symTable.popScope(); // Clean up scope on exception
 
-                if (reactBody != null && reactCondition != null) {
-                    int iterationCount = 0;
-                    int maxIterations = 1000000;
-
-                    do {
-                        if (++iterationCount > maxIterations) {
-                            throw new InterpreterException(
-                                    "Line " + currentLine + ": Infinite loop detected in 'react' loop (exceeded " + maxIterations + " iterations)",
-                                    currentLine
-                            );
+                        if ("CEREBRA_DORMANT".equals(innerE.getMessage())) {
+                            break;
                         }
-                        try {
-                            evaluateNode(reactBody);
-                        } catch (RuntimeException innerE) {
-                            if (!innerE.getMessage().equals("CEREBRA_FLOW")) {
-                                throw innerE;
-                            }
+                        if ("CEREBRA_FLOW".equals(innerE.getMessage())) {
+                            continue;
                         }
-                    } while (isTruthy(evaluateNode(reactCondition)));
-                }
+                        throw innerE;
+                    }
+                } while (isTruthy(evaluateNode(reactCondition)));
             }
-        } catch (RuntimeException outerE) {
-            if (!outerE.getMessage().equals("CEREBRA_DORMANT")) {
-                throw outerE;
-            }
+            return null;
         }
+
         return null;
     }
 
@@ -850,7 +885,7 @@ public class Interpreter {
         try {
             if (builtInName.equals("transcribe") || builtInName.contains("transcribe")) {
                 Object innerVal = evaluateNode(children.get(2));
-                return String.valueOf(innerVal).replace("thought_lit:", "").trim();
+                return String.valueOf(innerVal).replace("thought_lit:", "");
             } else if (builtInName.equals("length") || builtInName.contains("length")) {
                 Object innerVal = evaluateNode(children.get(2));
                 if (innerVal == null) {
@@ -931,12 +966,14 @@ public class Interpreter {
     private Object extractTerminalValue(ASTNode node) {
         if (node instanceof TerminalNode) {
             String text = ((TerminalNode) node).token.lexeme;
+            TokenType type = ((TerminalNode) node).token.type;
 
-            if (text.startsWith("\"") && text.endsWith("\"")) {
-                return text.substring(1, text.length() - 1);
+            if (type == TokenType.THOUGHT_LIT) {
+                return text;
             }
+
             if (text.contains("thought_lit:")) {
-                return text.replace("thought_lit:", "").trim();
+                return text.replace("thought_lit:", "");
             }
             if (text.equals("true")) {
                 return true;
@@ -948,7 +985,7 @@ public class Interpreter {
             // Strip type prefix
             String numeric = text;
             if (text.contains(":")) {
-                numeric = text.substring(text.lastIndexOf(":") + 1).trim();
+                numeric = text.substring(text.lastIndexOf(":") + 1);
             }
             numeric = numeric.replaceAll("[\\[\\]]", "").replace("ID:", "").trim();
 
@@ -958,7 +995,6 @@ public class Interpreter {
                 }
                 return Integer.parseInt(numeric);
             } catch (Exception e) {
-                // Not a number — return original text cleaned up
                 return text.replaceAll("[\\[\\]]", "").replace("ID:", "").trim();
             }
         }

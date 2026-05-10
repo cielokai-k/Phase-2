@@ -1,6 +1,9 @@
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 public class SymTable {
 
@@ -9,9 +12,12 @@ public class SymTable {
     // Constructor
     public SymTable() {
         table = new HashMap<>();
+        scopeStack.push(new HashSet<>()); // Initialize global scope
     }
 
     private Map<String, Boolean> initialized = new HashMap<>();
+
+    private Stack<Set<String>> scopeStack = new Stack<>();
 
     // Method to track initialized/default variables
     public void markAsInitialized(String lexeme) {
@@ -22,11 +28,35 @@ public class SymTable {
         return initialized.getOrDefault(lexeme, false);
     }
 
+    // Scope management methods
+    public void pushScope() {
+        scopeStack.push(new HashSet<>());
+    }
+
+    public void popScope() {
+        if (scopeStack.size() > 1) { // Keep at least global scope
+            Set<String> localVars = scopeStack.pop();
+            // Remove all variables declared in this scope
+            for (String varName : localVars) {
+                removeLexeme(varName);
+            }
+        }
+    }
+
     // Method that will add identifier if missing
     public void addLexeme(String lexeme) {
         if (!table.containsKey(lexeme)) {
             table.put(lexeme, new IdDetails(lexeme, TokenType.IDENTIFIER));
+            if (!scopeStack.isEmpty()) {
+                scopeStack.peek().add(lexeme); // Track in current scope
+            }
         }
+    }
+
+    // Helper method to remove a lexeme from all tracking structures
+    public void removeLexeme(String lexeme) {
+        table.remove(lexeme);
+        initialized.remove(lexeme);
     }
 
     // Locks the variable so it cannot be changed

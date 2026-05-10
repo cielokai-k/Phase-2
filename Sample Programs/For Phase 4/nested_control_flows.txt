@@ -63,7 +63,7 @@ activate {
     cycle (m < 5) {
         m++;
         stimulate (m == 2) {
-            flow;   // skip printing 2
+            flow;   dream: skip printing 2
         }
         stimulate (m == 4) {
             express("Almost done...");
@@ -80,15 +80,15 @@ activate {
         cycle (divisor < candidate) {
             stimulate (candidate % divisor == 0) {
                 is_prime = false;
-                dormant;   // break inner cycle
+                dormant;   dream: break inner cycle
             }
             divisor++;
         }
         stimulate (is_prime) {
             express(transcribe(candidate) + " is prime.");
             found++;
-            stimulate (found == 2) {
-                dormant;   // break outer cycle after 2 primes
+            stimulate (found == 2) {    
+                dormant;   dream: break outer cycle after 2 primes
             }
         }
         candidate++;
