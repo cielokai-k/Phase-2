@@ -872,7 +872,10 @@ public class Interpreter {
             }
             if (cmd.equals("recall") || cmd.contains("recall")) {
                 Object retVal = evaluateNode(children.get(1));
-                throw new RuntimeException("CEREBRA_RETURN:" + retVal);
+                throw new InterpreterException(
+                        "Line " + currentLine + ": Invalid use of 'recall' outside of a subroutine body.",
+                        currentLine
+                );
             }
         }
 
@@ -1026,60 +1029,47 @@ public class Interpreter {
             }
 
             if (nt.children.size() > 2) {
-                try {
-                    Object val = evaluateNode(nt.children.get(2));
-                    symTable.setValue(varName, val);
-                    symTable.markAsInitialized(varName);
-                } catch (Exception e) {
+                Object val = evaluateNode(nt.children.get(2));
 
-                    String msg = e.getMessage();
-
-                    // Detect invalid return usage / return mismatch
-                    if (msg != null && msg.contains("Variable 'return' has not been declared")) {
-
-                        String expectedType = dataType;
-
-                        // Try getting actual returned type from cause/message
-                        String actualType = "unknown";
-
-                        Throwable cause = e.getCause();
-
-                        if (cause != null && cause.getMessage() != null) {
-
-                            String causeMsg = cause.getMessage();
-
-                            if (causeMsg.contains("thought_lit") || causeMsg.contains("\"")) {
-                                actualType = "thought";
-                            } else if (causeMsg.matches(".*\\d+.*")) {
-                                actualType = "pulse";
-                            } else if (causeMsg.equalsIgnoreCase("true")
-                                    || causeMsg.equalsIgnoreCase("false")) {
-                                actualType = "synapse";
-                            }
-                        }
-
+                // *** ADD THIS TYPE CHECK
+                String typeClean = dataType.toLowerCase().trim();
+                if (typeClean.equals("pulse") && !(val instanceof Integer)) {
+                    try {
+                        val = (int) Double.parseDouble(val.toString());
+                    } catch (Exception e) {
                         throw new InterpreterException(
-                                "Line " + currentLine
-                                + ": Return type mismatch. Expected '"
-                                + expectedType
-                                + "' but got '"
-                                + actualType + "'.",
+                                "Line " + currentLine + ": Cannot convert value '" + val
+                                + "' to type '" + dataType + "' for variable '" + varName + "'",
                                 currentLine
                         );
                     }
-
+                } else if (typeClean.equals("spark") && !(val instanceof Float)) {
+                    try {
+                        val = Float.parseFloat(val.toString());
+                    } catch (Exception e) {
+                        throw new InterpreterException(
+                                "Line " + currentLine + ": Cannot convert value '" + val
+                                + "' to type '" + dataType + "' for variable '" + varName + "'",
+                                currentLine
+                        );
+                    }
+                } else if (typeClean.equals("synapse") && !(val instanceof Boolean)) {
                     throw new InterpreterException(
-                            "Line " + currentLine
-                            + ": Error initializing variable '"
-                            + varName
-                            + "' - " + msg,
-                            currentLine,
-                            e
+                            "Line " + currentLine + ": Cannot convert value '" + val
+                            + "' to type '" + dataType + "' for variable '" + varName + "'",
+                            currentLine
+                    );
+                } else if ((typeClean.equals("thought"))
+                        && (val instanceof Integer || val instanceof Float || val instanceof Boolean)) {
+                    throw new InterpreterException(
+                            "Line " + currentLine + ": Cannot convert value '" + val
+                            + "' to type '" + dataType + "' for variable '" + varName + "'",
+                            currentLine
                     );
                 }
-            } else {
-                Object defaultValue = getDefaultValueForType(dataType);
-                symTable.setValue(varName, defaultValue);
+
+                symTable.setValue(varName, val);
+                symTable.markAsInitialized(varName);
             }
         } else {
             for (ASTNode child : nt.children) {
