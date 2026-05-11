@@ -1,0 +1,150 @@
+dream: Cerebra Interpreter – Complete Error Test 
+
+activate {
+
+    dream: ----- Row 1 : Duplicate declaration -----
+    pulse x = 5;
+    pulse x = 10;                    
+
+    dream: ----- Row 2 : Array re‑declaration -----
+    pulse cluster arr[3];
+    pulse cluster arr[5];              
+
+    dream: ----- Row 3 : Instinct reassignment -----
+    instinct pulse MAX = 10;
+    MAX = 20;                          
+
+    dream: ----- Row 4 : Undeclared variable (sense) -----
+    sense pulse unknown;              
+
+    dream: ----- Row 5 : Undeclared variable (access) -----
+    pulse y = x1 + 5;                  // x1 not declared 
+
+    dream: ----- Row 6 : Error initializing variable -----
+    pulse x2 = 10 / 0;                 // ERROR: division by zero
+
+    dream: ----- Row 7 : Auto‑declaration (warning) -----
+    autoVar = 42;                      
+
+    dream: ----- Row 8 : Error initializing cluster -----
+    pulse cluster arr1[2] = {1, 2/0};  // ERROR: division by zero
+
+    dream: ----- Row 9 : Index out of bounds -----
+    pulse cluster arr2[3] = {1,2,3};
+    pulse x3 = arr2[5];                // ERROR: index 5
+
+    dream: ----- Row 10 : Non‑numeric index -----
+    pulse cluster arr3[3];
+    arr3["hello"] = 5;                 // ERROR: string index
+
+    dream: ----- Row 11 : Indexing non‑cluster -----
+    pulse x4 = 5;
+    x4[0] = 10;                        // ERROR: not an array
+
+    dream: ----- Row 12 : Error evaluating array index -----
+    pulse cluster arr4[3];
+    arr4[10/0] = 5;                    // ERROR: division by zero
+
+    dream: ----- Row 13 : Division by zero -----
+    pulse x5 = 10 / 0;                 // ERROR
+
+    dream: ----- Row 14 : Modulo by zero -----
+    pulse x6 = 10 % 0;                 // ERROR
+
+    dream: ----- Row 15 : Type error in math -----
+    pulse x7 = true + 5;               // ERROR: Boolean + Integer
+
+    dream: ----- Row 16 : Math with null values -----
+    thought t;
+    pulse x8 = t + 5;                  // ERROR: null + number
+
+    dream: ----- Row 17 : String + numeric without transcribe -----
+    thought s = "Count: " + 5;
+    express(s);
+
+    dream: ----- Row 18 : Unary minus on non‑numeric -----
+    pulse x9 = -true;                  // ERROR: - on Boolean
+
+    dream: ----- Row 19 : Postfix on non‑numeric -----
+    thought s1 = "hello";
+    s1++;                              // ERROR: ++ on string
+
+    dream: ----- Row 20 : Postfix on undeclared -----
+    count++;                           // ERROR: undeclared
+
+    dream: ----- Row 21 : Postfix on uninitialized -----
+    pulse count1;
+    count1++;                          // ERROR: uninitialized
+
+    dream: ----- Row 22 : Error evaluating expression in assignment -----
+    pulse x11;
+    x11 = 10/0;                        // ERROR: division by zero
+
+    dream: ----- Row 23 : Error in compound assignment -----
+    pulse x12 = 10;
+    x12 += 10/0;                       // ERROR: division by zero
+
+    dream: ----- Row 24 : Cannot convert value to type -----
+    pulse x13 = "hello";               // ERROR: string → pulse
+
+    dream: ----- Row 25 : Type error in relational -----
+    stimulate ("a" > "b") { }          // ERROR: string compare
+
+    dream: ----- Row 26 : Unknown relational operator -----
+    pulse x14 = 2;
+    pulse y14 = 5;
+    stimulate (x14 <> y14) { }         // ERROR: <> not allowed
+
+    dream: ----- Row 27 : Compare null values -----
+    thought t1;
+    stimulate (t1 == null) { }         // ERROR: null comparison
+
+    dream: ----- Row 28 : Invalid dormant placement -----
+    dormant;                           // ERROR: outside switch
+
+    dream: ----- Row 29 : Invalid flow placement -----
+    flow;                              // ERROR: outside loop
+
+    dream: ----- Row 30 : Invalid recall placement -----
+    recall 10;                         // ERROR: outside subroutine
+
+    dream: ----- Row 31 : Infinite loop (cycle) – commented (would hang) -----
+    /* cycle (true) { } */
+
+    dream: ----- Row 32 : Infinite loop (echo) – commented -----
+    /* echo (pulse i = 0; true; i++) { } */
+
+    dream: ----- Row 33 : Infinite loop (react) – commented -----
+    /* react { } cycle (true); */
+
+    dream: ----- Row 34 : Duplicate case label -----
+    evaluate (1) {
+        path 1: express("a");
+        path 1: express("b");          
+    }
+
+    dream: ----- Row 35 : General I/O runtime error -----
+    express(1/0);                      // ERROR: division by zero
+
+    dream: ----- Row 36 : Subroutine not defined -----
+    computeData();                     // ERROR: undefined function
+
+    dream: ----- Row 37 : Error in subroutine -----
+    action f() { 10/0; }
+    f();                               // ERROR: division in subroutine
+
+    dream: ----- Row 38 : Return type mismatch -----
+    action pulse g() { recall "hi"; }
+    pulse x15 = g();                   // ERROR: expected a pulse
+
+    dream: ----- Row 39 : Parameter count mismatch -----
+    action pulse add(pulse a, pulse b) { recall a + b; }
+    add(5);                            // ERROR: needs 2 args
+
+    dream: ----- Row 40 : Length of null value -----
+    thought t2;
+    express(length(t2));               // ERROR: length of null
+
+    dream: ----- Row 41 : Built‑in call failure -----
+    transcribe(10/0);               
+}
