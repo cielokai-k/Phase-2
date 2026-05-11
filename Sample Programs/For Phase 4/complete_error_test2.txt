@@ -1,0 +1,230 @@
+dream: Cerebra Interpreter – Complete Error Test (individual activate blocks)
+
+
+dream: ----- Row 1 : Duplicate declaration -----
+activate {
+    pulse x = 5;
+    pulse x = 10;
+}
+
+dream: ----- Row 2 : Array re‑declaration -----
+activate {
+    pulse cluster arr[3];
+    pulse cluster arr[5];
+}
+
+dream: ----- Row 3 : Instinct reassignment -----
+activate {
+    instinct pulse MAX = 10;
+    MAX = 20;
+}
+
+dream: ----- Row 4 : Undeclared variable (sense) -----
+activate {
+    sense pulse unknown;
+}
+
+dream: ----- Row 5 : Undeclared variable (access) -----
+activate {
+    pulse y = x1 + 5;
+}
+
+dream: ----- Row 6 : Error initializing variable -----
+activate {
+    pulse x2 = 10 / 0;
+}
+
+dream: ----- Row 7 : Auto‑declaration (warning) -----
+activate {
+    autoVar = 42;
+}
+
+dream: ----- Row 8 : Error initializing cluster -----
+activate {
+    pulse cluster arr1[2] = {1, 2/0};
+}
+
+dream: ----- Row 9 : Index out of bounds -----
+activate {
+    pulse cluster arr2[3] = {1,2,3};
+    pulse x3 = arr2[5];
+}
+
+dream: ----- Row 10 : Non‑numeric index -----
+activate {
+    pulse cluster arr3[3];
+    arr3["hello"] = 5;
+}
+
+dream: ----- Row 11 : Indexing non‑cluster -----
+activate {
+    pulse x4 = 5;
+    x4[0] = 10;
+}
+
+dream: ----- Row 12 : Error evaluating array index -----
+activate {
+    pulse cluster arr4[3];
+    arr4[10/0] = 5;
+}
+
+dream: ----- Row 13 : Division by zero -----
+activate {
+    pulse x5 = 10 / 0;
+}
+
+dream: ----- Row 14 : Modulo by zero -----
+activate {
+    pulse x6 = 10 % 0;
+}
+
+dream: ----- Row 15 : Type error in math -----
+activate {
+    pulse x7 = true + 5;
+}
+
+dream: ----- Row 16 : Math with null values -----
+activate {
+    thought t;
+    pulse x8 = t + 5;
+}
+
+dream: ----- Row 17 : String + numeric without transcribe (allowed, not error) -----
+activate {
+    thought s = "Count: " + 5;
+    express(s);
+}
+
+dream: ----- Row 18 : Unary minus on non‑numeric -----
+activate {
+    pulse x9 = -true;
+}
+
+dream: ----- Row 19 : Postfix on non‑numeric -----
+activate {
+    thought s1 = "hello";
+    s1++;
+}
+
+dream: ----- Row 20 : Postfix on undeclared -----
+activate {
+    count++;
+}
+
+dream: ----- Row 21 : Postfix on uninitialized -----
+activate {
+    pulse count1;
+    count1++;
+}
+
+dream: ----- Row 22 : Error evaluating expression in assignment -----
+activate {
+    pulse x11;
+    x11 = 10/0;
+}
+
+dream: ----- Row 23 : Error in compound assignment -----
+activate {
+    pulse x12 = 10;
+    x12 += 10/0;
+}
+
+dream: ----- Row 24 : Cannot convert value to type -----
+activate {
+    pulse x13 = "hello";
+}
+
+dream: ----- Row 25 : Type error in relational -----
+activate {
+    stimulate ("a" > "b") { }
+}
+
+dream: ----- Row 26 : Unknown relational operator -----
+activate {
+    pulse x14 = 2;
+    pulse y14 = 5;
+    stimulate (x14 <> y14) { }
+}
+
+dream: ----- Row 27 : Compare null values -----
+activate {
+    thought t1;
+    stimulate (t1 == null) { }
+}
+
+dream: ----- Row 28 : Invalid dormant placement -----
+activate {
+    dormant;
+}
+
+dream: ----- Row 29 : Invalid flow placement -----
+activate {
+    flow;
+}
+
+dream: ----- Row 30 : Invalid recall placement -----
+activate {
+    recall 10;
+}
+
+dream: ----- Row 31 : Infinite loop (cycle) – commented (would hang) -----
+/* activate {
+    cycle (true) { }
+} */
+
+dream: ----- Row 32 : Infinite loop (echo) – commented -----
+/* activate {
+    echo (pulse i = 0; true; i++) { }
+} */
+
+dream: ----- Row 33 : Infinite loop (react) – commented -----
+/* activate {
+    react { } cycle (true);
+} */
+
+dream: ----- Row 34 : Duplicate case label -----
+activate {
+    evaluate (1) {
+        path 1: express("a");
+        path 1: express("b");
+    }
+}
+
+dream: ----- Row 35 : General I/O runtime error -----
+activate {
+    express(1/0);
+}
+
+dream: ----- Row 36 : Subroutine not defined -----
+activate {
+    computeData();
+}
+
+dream: ----- Row 37 : Error in subroutine -----
+action f() { 10/0; }
+activate {
+    f();
+}
+
+dream: ----- Row 38 : Return type mismatch -----
+action pulse g() { recall "hi"; }
+activate {
+    pulse x15 = g();
+}
+
+dream: ----- Row 39 : Parameter count mismatch -----
+action pulse add(pulse a, pulse b) { recall a + b; }
+activate {
+    add(5);
+}
+
+dream: ----- Row 40 : Length of null value -----
+activate {
+    thought t2;
+    express(length(t2));
+}
+
+dream: ----- Row 41 : Built‑in call failure -----
+activate {
+    transcribe(10/0);
+}
