@@ -10,17 +10,17 @@ activate {
     synapse flag = true;
 
     dream: ----- mixed-type addition -----
-    spark mix1 = p + s;                // pulse + spark -> spark
+    spark mix1 = p + s;                dream: pulse + spark -> spark
     express("10(pulse) + 3.5(spark) = spark: " + transcribe(mix1));
 
-    stream mix2 = s + d;               // spark + stream -> stream
+    stream mix2 = s + d;               dream: spark + stream -> stream
     express("3.5(spark) + 2.0(stream) = stream: " + transcribe(mix2));
 
-    stream mix3 = p + d;               // pulse + stream -> stream
+    stream mix3 = p + d;               dream: pulse + stream -> stream
     express("10(pulse) + 2.0(stream) = stream: " + transcribe(mix3));
 
     dream: ----- compound assignment with coercion -----
-    p += s;                            // pulse gets float value -> auto coerced
+    p += s;                            dream: pulse gets float value -> auto coerced
     express("p after += 3.5 : " + transcribe(p));
 
     dream: ----- boolean to numeric (true=1, false=0) -----

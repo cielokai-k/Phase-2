@@ -1,108 +1,107 @@
-dream: =====================================================================
-dream: SEMANTIC ERRORS TEST
-dream: INSTRUCTION: The compiler will crash on the first error it encounters. 
-dream: Test these blocks one by one to verify.
-dream: =====================================================================
-
-
-dream: ==========================================
-dream: 1. INVALID VARIABLE ASSIGNMENT (CAUGHT)
-dream: ==========================================
-activate {
-    pulse score = 100;
-    dream: ERROR: Cannot assign a 'thought' (String) to a 'pulse' (Integer)
-    score = "High Score"; 
+dream {
+    CEREBRA FEATURES DEMONSTRATION
+    This program calculates a value, checks conditions, 
+    and uses arrays to demonstrate core language features.
 }
 
-
-dream: ==========================================
-dream: 2. CONSTANT REASSIGNMENT (CAUGHT)
-dream: ==========================================
-activate {
-    instinct pulse MAX_LIVES = 3;
-    dream: ERROR: Cannot reassign a value to an 'instinct' (Constant)
-    MAX_LIVES = 5; 
+dream {
+    Function definition (action) with a return value (recall).
+    It takes an integer (pulse) and returns its square.
 }
 
+action pulse calculateSquare(pulse num) {
+    recall num * num;
+}
 
-dream: ==========================================
-dream: 3. PARAMETER COUNT MISMATCH (CAUGHT)
-dream: ==========================================
-action void calculateDamage(pulse base, pulse multiplier) {
-    express("Calculating...");
+action void displayWelcome() { 
+    express("Welcome to Cerebra's sample program!");
 }
 
 activate {
-    dream: ERROR: Function requires 2 arguments, but only 1 is provided.
-    calculateDamage(10); 
-}
 
-
-dream: ==========================================
-dream: 4. STRING ARITHMETIC MISMATCH (CAUGHT)
-dream: ==========================================
-activate {
-    thought word = "Cerebra";
-    pulse multiplier = 3;
-    
-    dream: ERROR: Cannot perform multiplication (*) on a 'thought'
-    thought result = word * multiplier; 
-}
-
-
-dream: ==========================================
-dream: 5. STRING RELATIONAL OPERATOR (CAUGHT)
-dream: ==========================================
-activate {
-    thought word1 = "Apple";
-    thought word2 = "Banana";
-
-    dream: ERROR: Cannot use '>' or '<' on 'thought' types.
-    stimulate (word1 > word2) {
-        express("This should crash before execution.");
+    dream {
+        Variable Declarations using specific data types.
+        'thought' is used for string literals.
     }
-}
 
+    thought greeting = "Initiating Program...";
+    express(greeting);
 
-dream: ==========================================
-dream: 6. RETURN TYPE MISMATCH (CAUGHT)
-dream: ==========================================
-action pulse getStatus() {
-    dream: Returning a 'thought' (string) when the subroutine demands a 'pulse' (int)
-    return "All systems nominal"; 
-}
-
-activate {
-    pulse status = getStatus(); 
-}
-
-
-dream: ==========================================
-dream: 7. IMPLICIT CONCATENATION (CAUGHT)
-dream: ==========================================
-activate {
-    thought label = "Total Points: ";
-    pulse points = 500;
-    
-    dream: The semantic analyzer must block the '+' operator between String and Integer
-    thought display = label + points; 
-}
-
-
-dream: ==========================================
-dream: 8. DUPLICATE 'PATH' & 'DORMANT' (CAUGHT)
-dream: ==========================================
-activate {
-    pulse evaluateCheck = 1;
-
-    evaluate (evaluateCheck) {
-        path 1:
-            express("First path");
-            dream: This 'dormant' keyword currently causes a fatal compiler crash.
-            dormant; 
-        path 1:
-            dream: The analyzer fails to flag that 'path 1' was already used.
-            express("Duplicate path! Should cause a Semantic Error.");
-            dormant;
+    dream {
+        Input using 'sense'.
+        We initialize a variable first, then capture user input into it.
     }
+
+    express("Enter a pulse (integer) value: ");
+    pulse userValue = 0;
+    sense pulse userValue;
+
+    dream {
+        Conditional Logic using 'stimulate' (if) and 'inhibit' (else).
+        Checks if the input is negative.
+    }
+
+    stimulate (userValue < 0) {
+        express("Warning: Negative energy detected.");
+    } inhibit {
+        express("Positive energy detected.");
+        
+        dream: Function Call to calculate the square
+        pulse squared = calculateSquare(userValue);
+        
+        dream {
+            Explicit conversion needed for concatenation.
+            We use 'transcribe' to convert the integer result to a string.
+        }
+
+        express("Squared value: " + transcribe(squared));
+
+        dream {
+            Switch Statement using 'evaluate'.
+            'path' acts as case, 'dormant' as break, and 'base' as default.
+        }
+
+        evaluate (squared) {
+            path 64:
+                express("Result is zero.");
+                dormant;
+            path 100:
+                express("Result is exactly 100.");
+                dormant;
+            base:
+                express("Result is a standard variant.");
+        }
+    }
+
+    dream: Array (Cluster) Declaration with 3 integers
+    pulse cluster dataPoints[3] = {1, 2, 3};
+    express("First data point: " + transcribe(dataPoints[0]));
+
+    dream: Looping Construct (echo - for loop)
+    echo (pulse i = 0; i < 3; i++) {
+        express("Iteration sequence: " + transcribe(i));
+    }
+    
+    dream: Looping Construct (cycle - while loop)
+    pulse countdown = 3;
+    cycle (countdown > 0) {
+        express("T-minus " + transcribe(countdown));
+        countdown--;
+    }
+
+    dream: Initialize a negative number (Unary minus)
+    pulse x = -5;
+
+    dream: Initialize a positive number (Unary plus)
+    pulse x = +6;
+
+    dream {
+        5. Built-in function 'length' 
+        length function is used to retrieve the numbers of characters 
+        in a thought.
+    }
+
+    pulse version = 2;
+    thought versionInfo = "Cerebra Version " + transcribe(version);
+    express(versionInfo);
 }

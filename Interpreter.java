@@ -1459,10 +1459,7 @@ public class Interpreter {
         }
 
         if (val instanceof Boolean) {
-            throw new InterpreterException(
-                    "Type error - Cannot use boolean (synapse) type in numeric operation. Use explicit conversion if needed.",
-                    currentLine
-            );
+            return ((Boolean) val) ? 1.0 : 0.0;
         }
 
         if (val instanceof Character) {
