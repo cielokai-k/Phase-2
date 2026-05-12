@@ -669,14 +669,35 @@ public class Interpreter {
 
     private Object handleSwitch(List<ASTNode> children) {
         Object targetValue = evaluateNode(children.get(2));
-        boolean matchFound = evaluateCases(targetValue, children.get(5));
+        
+        try {
+            // 1. Evaluate the path (cases)
+            boolean matchFound = evaluateCases(targetValue, children.get(5));
 
-        if (!matchFound && children.size() > 6) {
-            ASTNode optBase = children.get(6);
-            if (!isEpsilon(optBase) && optBase instanceof NonTerminalNode) {
-                evaluateNode(((NonTerminalNode) optBase).children.get(2));
+            // 2. If no match, check for the base (default) case
+            if (!matchFound && children.size() > 6) {
+                ASTNode optBase = children.get(6);
+                
+                if (optBase instanceof NonTerminalNode) {
+                    NonTerminalNode baseNode = (NonTerminalNode) optBase;
+                    
+                    // THE FOOLPROOF FIX: A real base case has 'base', ':', and a block (size >= 3).
+                    // An EPSILON node only has a size of 1. 
+                    if (baseNode.children.size() >= 3) {
+                        
+                        // Execute the block inside the base case!
+                        evaluateNode(baseNode.children.get(2)); 
+                        
+                    }
+                }
+            }
+        } catch (RuntimeException e) {
+            // 3. Catch the 'dormant' elevator so it only stops the switch!
+            if (e.getMessage() != null && !e.getMessage().equals("CEREBRA_DORMANT")) {
+                throw e; // Keep throwing if it's a real error or a 'recall'
             }
         }
+        
         return null;
     }
 
